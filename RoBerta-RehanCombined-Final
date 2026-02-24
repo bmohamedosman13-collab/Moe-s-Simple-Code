@@ -1,0 +1,235 @@
+import torch
+import torch.nn.functional as F
+from transformers import RobertaTokenizer, RobertaForSequenceClassification
+import re
+import torch.nn as nn
+import pickle
+
+#Welcome Message: 
+
+print("Hello, welcome to this hybrid Re-HAN + RoBERTa Depression Causality/Severity Model. The first out of many") 
+
+
+# ==========================================
+# 1. CORE ENGINE SETUP
+# ==========================================
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+class Attention(nn.Module):
+    def __init__(self, hidden_dim):
+        super().__init__()
+        self.attention = nn.Linear(hidden_dim, 1)
+    def forward(self, x):
+        weights = torch.softmax(self.attention(x), dim=1)
+        return (x * weights).sum(dim=1), weights
+
+class ReHAN(nn.Module):
+    def __init__(self, vocab_size, embed_dim, hidden_dim, num_classes):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
+        self.word_rnn = nn.GRU(embed_dim, hidden_dim, batch_first=True)
+        self.word_att = Attention(hidden_dim)
+        self.sent_rnn = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+        self.sent_att = Attention(hidden_dim)
+        self.fc = nn.Linear(hidden_dim, num_classes)
+        
+    def forward(self, docs):
+        B, S, W = docs.size()
+        docs_flat = docs.view(B * S, W)
+        emb = self.embedding(docs_flat)
+        h_word, _ = self.word_rnn(emb)
+        s_word, _ = self.word_att(h_word)
+        sent_vecs = s_word.view(B, S, -1)
+        h_sent, _ = self.sent_rnn(sent_vecs)
+        doc_vec, sent_weights = self.sent_att(h_sent)
+        return self.fc(doc_vec), sent_weights
+
+# ==========================================
+# 2. DATA LOADERS
+# ==========================================
+def load_resources():
+    with open("rehan_severity_vocab.pkl", "rb") as f: v_sev = pickle.load(f)
+    with open("rehan_cause_vocab.pkl", "rb") as f: v_cau = pickle.load(f)
+    
+    r_sev = ReHAN(len(v_sev), 200, 128, 4).to(device)
+    r_sev.load_state_dict(torch.load("rehan_severity.pt", map_location=device))
+    r_sev.eval()
+    
+    r_cau = ReHAN(len(v_cau), 200, 128, 6).to(device)
+    r_cau.load_state_dict(torch.load("rehan_cause.pt", map_location=device))
+    r_cau.eval()
+    
+    rob_sev = RobertaForSequenceClassification.from_pretrained("./results/checkpoint-1068").to(device)
+    rob_sev.eval()
+    
+    rob_cau = RobertaForSequenceClassification.from_pretrained("./cause_model_results/checkpoint-1512").to(device)
+    rob_cau.eval()
+    
+    tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
+    return r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau
+
+# ==========================================
+# 3. USER INTERFACE
+# ==========================================
+r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau = load_resources()
+
+print("\n" + "="*50)
+print("ANALYSIS CONFIGURATION")
+print("="*50)
+print("Please select from below what analysis you want to conduct:")
+print("1 - Depression Severity")
+print("2 - Depression Causality Estimate")
+analysis_choice = input("Selection: ").strip()
+
+user_input = input("\nInsert client text: ")
+raw_sentences = [s.strip() for s in re.split(r'[.!?]', user_input) if s.strip()][:15]
+
+# ==========================================
+# 4. ANALYSIS LOGIC (HYBRID RoBERTa + ReHAN, continuous scores)
+# ==========================================
+
+# --- Shared setup ---
+# ==========================================
+# PRE-ANALYSIS: PRIMARY INFERENCE PASS
+# ==========================================
+inputs = tokenizer([user_input], return_tensors="pt", truncation=True, padding=True).to(device)
+
+with torch.no_grad():
+    # Primary RoBERTa pass for Severity
+    sev_check_out = rob_sev(**inputs)
+    sev_probs = F.softmax(sev_check_out.logits, dim=1)[0]
+
+# Mapping probabilities to original variables
+p_min, p_mild, p_mod, p_sev_val = [p.item() for p in sev_probs]
+
+# ----- Refined Heuristic for "Happy/Minimum" -----
+# #** Logic to reduce False Positives; skip deep analysis only if 'Minimum' is dominant.
+is_explicitly_happy = p_min > 0.80 
+
+# ======================================================
+# OPTION 1 — SEVERITY ANALYSIS WITH HYBRID DECISION
+# ======================================================
+if analysis_choice == "1":
+
+    # ----- ReHAN Severity Encoding -----
+    with torch.no_grad():
+        tensor = torch.zeros(15, 20, dtype=torch.long)
+        for i, sent in enumerate(raw_sentences[:15]):
+            words = sent.lower().split()[:20]
+            for j, word in enumerate(words):
+                tensor[i, j] = v_sev.get(word, v_sev.get("<UNK>", 1))
+
+        logits_re, weights_re = r_sev(tensor.unsqueeze(0).to(device))
+        importance = weights_re.squeeze().cpu().tolist()
+        # #** Safety check: ensure importance is a list even for single sentences
+        if isinstance(importance, float): importance = [importance] 
+
+    # ----- ReHAN scalar signal (continuous) -----
+    rehan_signal = sum(w for w in importance if w > 0.15)
+    rehan_signal = min(rehan_signal, 1.0)
+
+    # ----- Hybrid severity score (With Overcorrection Protection) -----
+    # #** Combined weighting: 60% RoBERTA, 40% GRU-Attention Re-HAN
+    raw_hybrid = (p_sev_val * 0.6) + (rehan_signal * 0.4) 
+
+    if p_sev_val > 0.60: # #** RoBERTa Confidence Lock
+        # #** Protect high-confidence RoBERTa detections from dilution
+        hybrid_sev_score = max(p_sev_val, raw_hybrid) # #**
+    else:
+        # #** Use standard balanced hybrid approach
+        hybrid_sev_score = raw_hybrid # #**
+
+    # ----- Decision based on hybrid score -----
+    # #** Re-tuned thresholds for clinical consistency
+    if hybrid_sev_score < 0.25:
+        final_label = "Minimum"
+    elif hybrid_sev_score < 0.45: 
+        final_label = "Mild"
+    elif hybrid_sev_score < 0.70: 
+        final_label = "Moderate"
+    else:
+        final_label = "Severe"
+
+    # ----- OUTPUT REPORT -----
+    print("\n" + "=" * 50)
+    print("TECHNICAL WEIGHTS (RoBERTa)")
+    print(f"MIN: {p_min:.3f} | MILD: {p_mild:.3f} | MOD: {p_mod:.3f} | SEV: {p_sev_val:.3f}")
+    print(f"ReHAN Signal: {rehan_signal:.3f}")
+    print(f"Hybrid Severity Score: {hybrid_sev_score:.3f}") # #**
+    print("=" * 50)
+
+    print("\nIDENTIFIED DISCOURSE DETERMINANTS:")
+    for score, sent in zip(importance, raw_sentences):
+        if score > 0.15:
+            print(f"-> [Weight: {score:.3f}] {sent}")
+
+    print("-" * 50)
+    print(f"Severity level: {final_label} depression levels detected in client")
+
+# ======================================================
+# OPTION 2 — CAUSALITY ANALYSIS WITH HYBRID DECISION
+# ======================================================
+elif analysis_choice == "2":
+
+    # ----- RoBERTa Cause Prediction -----
+    with torch.no_grad():
+        out_rob_cau = rob_cau(**inputs)
+        probs_rob_cau = F.softmax(out_rob_cau.logits, dim=1)[0]
+
+    # ----- ReHAN Cause Encoding -----
+    with torch.no_grad():
+        tensor_cau = torch.zeros(15, 20, dtype=torch.long)
+        for i, sent in enumerate(raw_sentences[:15]):
+            words = sent.lower().split()[:20]
+            for j, word in enumerate(words):
+                tensor_cau[i, j] = v_cau.get(word, v_cau.get("<UNK>", 1))
+
+        logits_re_cau, weights_re_cau = r_cau(tensor_cau.unsqueeze(0).to(device))
+        importance_cau = weights_re_cau.squeeze().cpu().tolist()
+        # #** Safety check: ensure importance_cau is a list
+        if isinstance(importance_cau, float): importance_cau = [importance_cau] 
+
+    causes = ["No Reason", "Bias", "Job/Career", "Medication", "Relationship", "Alienation"]
+
+    # ----- ReHAN causality signal (continuous) -----
+    rehan_cause_signal = sum(w for w in importance_cau if w > 0.18)
+    rehan_cause_signal = min(rehan_cause_signal, 1.0)
+
+    rob_max_prob, rob_idx = torch.max(probs_rob_cau, dim=0)
+
+    # ----- Hybrid cause score (Refined Weighted Logic) -----
+    # #** 50/50 split to ensure both thematic keywords and semantic context are represented
+    hybrid_cause_score = (rob_max_prob.item() * 0.5) + (rehan_cause_signal * 0.5) # #**
+
+    # ----- Decision based on hybrid score (Refined Threshold) -----
+    # #** If combined confidence is low, default to 'No Dominant Causal Factor'
+    if hybrid_cause_score < 0.40: # #**
+        pred_cause = "No Dominant Causal Factor Identified" # #**
+    else:
+        pred_cause = causes[rob_idx.item()] # #**
+
+    # ----- OUTPUT -----
+    print("\n" + "=" * 50)
+    print("DEBUG: CAUSALITY HYBRID SIGNALS")
+    print(f"RoBERTa Max Prob: {rob_max_prob.item():.3f}")
+    print(f"ReHAN Cause Signal: {rehan_cause_signal:.3f}")
+    print(f"Hybrid Cause Score: {hybrid_cause_score:.3f}") # #**
+    print("=" * 50)
+
+    print("\nCAUSALITY DETERMINANTS (Why this theme?):")
+    # #** Ensure we iterate over importance_cau for causal pass
+    for score, sent in zip(importance_cau, raw_sentences): 
+        if score > 0.18:
+            print(f"-> [Inference Trigger] {sent}")
+
+    print("-" * 50)
+    print(f"Estimated Thematic Factor: {pred_cause}")
+    print("\nPROBABILITY BREAKDOWN (RoBERTa Raw):")
+    cause_probs = probs_rob_cau.tolist()
+    for name, p_val in zip(causes, cause_probs):
+        print(f" -> {name:15}: {p_val*100:6.1f}%")
+        
+        print(f"\nReHAN Signal Strength: {rehan_cause_signal*100:6.1f}%")    
+
+else:
+    print("Invalid Selection.")
