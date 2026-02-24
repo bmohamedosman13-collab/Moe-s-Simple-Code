@@ -27,9 +27,17 @@ custom_css = """
 
     /* Global Typography */
     .stApp {
-        background: linear-gradient(135deg, #1a1a1a 0%, #212121 40%, #3a3258 100%);
-        color: #f5f5f5;
-        font-family: 'Playfair Display', serif; /* Primary Font Choice */
+    background: linear-gradient(-45deg, #1a1a1a, #212121, #3a3258, #8d7dca);
+    background-size: 400% 400%;
+    animation: gradientMove 18s ease infinite;
+
+    color: #f5f5f5;
+    font-family: 'Playfair Display', serif;}
+    
+    @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
     }
 
     /* Massive Headings */
@@ -93,7 +101,7 @@ if 'show_demo' not in st.session_state:
 
 # --- 4. SIDEBAR (RESTORED WITH FEATURES) ---
 with st.sidebar:
-    st.markdown("<h1 style='font-size: 2.5rem !important;'>Insyte</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='font-size: 2.4rem !important;'>Insyte</h1>", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### Upcoming Features")
     st.markdown("""
@@ -103,7 +111,7 @@ with st.sidebar:
     * Workflow and documentation support
     """)
     st.markdown("---")
-    if st.button("🏠 Home / Info"):
+    if st.button("Home"):
         st.session_state.show_demo = False
         st.rerun()
     st.markdown("---")
@@ -162,11 +170,11 @@ def load_resources():
         r_cau.eval()
         
         # Load RoBERTa from the base directory
-        rob_sev = RobertaForSequenceClassification.from_pretrained(base_path, local_files_only=True).to(device)
+        rob_sev = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device)
         rob_sev.eval()
         
-        rob_cau = RobertaForSequenceClassification.from_pretrained(base_path, local_files_only=True).to(device)
-        rob_cau.eval()
+        rob_cau = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device)
+        rob_cau.eval()        
         
         tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
         
@@ -189,7 +197,7 @@ if not st.session_state.show_demo:
     count_up_html = """
     <div style="text-align: center; padding: 20px;">
         <div id="counter" style="font-size: 6rem; font-weight: 700; color: #8d7dca; margin-bottom: 10px; line-height: 1; font-family: 'Playfair Display', serif;">0</div>
-        <div style="font-size: 1.6rem; color: #d0d0d0; font-family: 'Inter', sans-serif;">people die by suicide annually in Canada.</div>
+        <div style="font-size: 1.6rem; color: #d0d0d0; font-family: 'Inter', sans-serif;">people die by suicide annually in Canada according (Statistics Canada).</div>
     </div>
     <script>
         let startTimestamp = null;
@@ -209,15 +217,18 @@ if not st.session_state.show_demo:
     components.html(count_up_html, height=250)
 
     st.markdown("""
-    Clinicians face increasing caseloads and documentation burdens, making early signal detection difficult. 
-    Insyte builds AI-assisted tools to support structured clinical insight. Analyze patient discourse to identify severity and contributing factors in seconds.
+    Clinicians face increasing caseloads and documentation burdens, making early signal detection difficult.
+    
+    Insyte builds AI-assisted tools to support structured clinical insight. 
+    
+    Analyze patient discourse to identify severity and contributing factors in seconds.
     """)
     st.markdown("<hr>", unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("### About Insyte")
-        st.markdown("Early-stage clinical support designed for psychologists to review intake materials more efficiently.")
+        st.markdown("Insyte is an early-stage clinical support tool designed to assist psychologists in reviewing written intake and assessment materials more efficiently. This prototype is currently in pilot testing and is not clinically validated.")
     with c2:
         st.markdown("### How it helps")
         st.markdown("* Highlights symptom language patterns\n* Generates structured summaries\n* Supports clinical decision-making")
@@ -229,7 +240,7 @@ if not st.session_state.show_demo:
     <div class="survey-box">
         <h2 style="margin-top: 0;">Help shape the future.</h2>
         <p>This is a clinical pilot. Your feedback is essential.</p>
-        <a href="{survey_url}" class="survey-link" target="_blank">Take the Clinical Feedback Survey →</a>
+        <a href="{survey_url}" class="survey-link" target="_blank">Feedback Survey →</a>
     </div>
     """, unsafe_allow_html=True)
     
