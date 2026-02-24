@@ -25,32 +25,46 @@ custom_css = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap');
 
-    /* Global Typography */
+    /* Global Typography + Clinical Plum Gradient */
     .stApp {
-    background: linear-gradient(-45deg, #1a1a1a, #212121, #3a3258, #8d7dca);
-    background-size: 400% 400%;
-    animation: gradientMove 18s ease infinite;
+        background: linear-gradient(-45deg, #141018, #1B1622, #221A2B, #2A2034);
+        background-size: 400% 400%;
+        animation: gradientMove 32s ease infinite;
 
-    color: #f5f5f5;
-    font-family: 'Playfair Display', serif;}
-    
+        color: #f5f5f5;
+        font-family: 'Playfair Display', serif;
+    }
+
     @keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
     /* Massive Headings */
-    h1 { font-size: 4.5rem !important; font-weight: 700 !important; margin-bottom: 0px !important; }
-    h2 { font-size: 3rem !important; font-weight: 400 !important; }
-    h3 { font-size: 2.2rem !important; font-weight: 400 !important; color: #8d7dca !important; }
+    h1 { 
+        font-size: 4.5rem !important; 
+        font-weight: 700 !important; 
+        margin-bottom: 0px !important; 
+    }
+
+    h2 { 
+        font-size: 3rem !important; 
+        font-weight: 400 !important; 
+    }
+
+    h3 { 
+        font-size: 2.2rem !important; 
+        font-weight: 400 !important; 
+        color: #9C8ACF !important;   /* muted clinical lavender */
+    }
 
     /* Large, Readable Body Text */
     p, li, label {
         font-family: 'Inter', sans-serif;
         font-size: 1.4rem !important;
         line-height: 1.8 !important;
-        color: #d1d1d1;
+        color: #D6D3DD;
     }
 
     /* Metric & UI elements */
@@ -59,15 +73,16 @@ custom_css = """
 
     /* Salient Survey Box */
     .survey-box {
-        background-color: rgba(141, 125, 202, 0.15);
-        border: 1px solid #8d7dca;
+        background-color: rgba(156, 138, 207, 0.12);
+        border: 1px solid #9C8ACF;
         padding: 30px;
         border-radius: 12px;
         text-align: center;
         margin-bottom: 40px;
     }
+
     .survey-link {
-        color: #8d7dca !important;
+        color: #9C8ACF !important;
         font-size: 1.8rem !important;
         font-weight: 700;
         text-decoration: underline !important;
@@ -75,8 +90,8 @@ custom_css = """
 
     /* Premium Button */
     .stButton>button {
-        background-color: #8d7dca !important;
-        color: #1a1a1a !important;
+        background-color: #9C8ACF !important;
+        color: #141018 !important;
         font-size: 1.6rem !important;
         font-weight: 700 !important;
         padding: 15px 40px !important;
@@ -85,12 +100,16 @@ custom_css = """
         width: 100%;
         transition: transform 0.2s ease;
     }
+
     .stButton>button:hover {
         transform: scale(1.02);
-        box-shadow: 0 10px 20px rgba(141, 125, 202, 0.3);
+        box-shadow: 0 10px 25px rgba(156, 138, 207, 0.25);
     }
 
-    hr { border-top: 1px solid rgba(255,255,255,0.1); margin: 3rem 0; }
+    hr { 
+        border-top: 1px solid rgba(255,255,255,0.08); 
+        margin: 3rem 0; 
+    }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -103,7 +122,7 @@ if 'show_demo' not in st.session_state:
 with st.sidebar:
     st.markdown("<h1 style='font-size: 2.4rem !important;'>Insyte</h1>", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("### Upcoming Features")
+    st.markdown("### Clinical Workflow Roadmap")
     st.markdown("""
     * Patient assessment tracking
     * Treatment progress monitoring
@@ -208,7 +227,7 @@ if not st.session_state.show_demo:
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            element.innerHTML = "> " + Math.floor(easeOutQuart * finalValue).toLocaleString();
+            element.innerHTML = "" + Math.floor(easeOutQuart * finalValue).toLocaleString();
             if (progress < 1) { window.requestAnimationFrame(step); }
         };
         window.requestAnimationFrame(step);
@@ -219,9 +238,9 @@ if not st.session_state.show_demo:
     st.markdown("""
     Clinicians face increasing caseloads and documentation burdens, making early signal detection difficult.
     
-    Insyte builds AI-assisted tools to support structured clinical insight. 
+    Insyte builds AI-assisted tools that support structured clinical insight for psychologists and mental health clinicians reviewing written intake and assessment materials.
     
-    Analyze patient discourse to identify severity and contributing factors in seconds.
+    Quickly analyze patient discourse to surface symptom severity signals and potential contributing factors
     """)
     st.markdown("<hr>", unsafe_allow_html=True)
     
