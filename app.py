@@ -216,7 +216,7 @@ if not st.session_state.show_demo:
     count_up_html = """
     <div style="text-align: center; padding: 20px;">
         <div id="counter" style="font-size: 6rem; font-weight: 700; color: #8d7dca; margin-bottom: 10px; line-height: 1; font-family: 'Playfair Display', serif;">0</div>
-        <div style="font-size: 1.6rem; color: #d0d0d0; font-family: 'Inter', sans-serif;">people die by suicide annually in Canada according (Statistics Canada).</div>
+        <div style="font-size: 1.6rem; color: #d0d0d0; font-family: 'Inter', sans-serif;">people die by suicide annually in Canada(Statistics Canada).</div>
     </div>
     <script>
         let startTimestamp = null;
@@ -291,11 +291,16 @@ else:
         if user_input.strip():
             raw_sentences = [s.strip() for s in re.split(r'[.!?]', user_input) if s.strip()][:15]
             inputs = tokenizer([user_input], return_tensors="pt", truncation=True, padding=True).to(device)
-
+            
             with torch.no_grad():
                 sev_out = rob_sev(**inputs)
                 sev_probs = F.softmax(sev_out.logits, dim=1)[0]
-                p_min, p_mild, p_mod, p_sev_val = [p.item() for p in sev_probs]
+            
+                if sev_probs.shape[0] == 4:
+                    p_min, p_mild, p_mod, p_sev_val = sev_probs.tolist()
+                else:
+                    st.error(f"Unexpected severity output shape: {sev_probs.shape}")
+                    st.stop()            
 
             if analysis_type == "Severity":
                 with torch.no_grad():
