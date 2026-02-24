@@ -158,7 +158,8 @@ def load_resources():
         r_cau.eval()
         
         # Load RoBERTa Models (Ensure these paths exist!)
-        rob_sev = RobertaForSequenceClassification.from_pretrained("./results/checkpoint-1068").to(device)
+        # The "." tells the code to look in the main folder where app.py is
+        rob_sev = RobertaForSequenceClassification.from_pretrained(".", local_files_only=True).to(device)
         rob_sev.eval()
         
         rob_cau = RobertaForSequenceClassification.from_pretrained("./cause_model_results/checkpoint-1512").to(device)
