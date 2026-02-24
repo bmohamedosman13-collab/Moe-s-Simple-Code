@@ -296,11 +296,11 @@ else:
                 sev_out = rob_sev(**inputs)
                 sev_probs = F.softmax(sev_out.logits, dim=1)[0]
             
-                if sev_probs.shape[0] == 4:
-                    p_min, p_mild, p_mod, p_sev_val = sev_probs.tolist()
+                if sev_probs.shape[0] == 2:
+                    p_non_severe, p_severe = sev_probs.tolist()
                 else:
                     st.error(f"Unexpected severity output shape: {sev_probs.shape}")
-                    st.stop()            
+                    st.stop()                      
 
             if analysis_type == "Severity":
                 with torch.no_grad():
