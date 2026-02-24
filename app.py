@@ -162,7 +162,7 @@ def load_resources():
         rob_sev = RobertaForSequenceClassification.from_pretrained(".", local_files_only=True).to(device)
         rob_sev.eval()
         
-        rob_cau = RobertaForSequenceClassification.from_pretrained("./cause_model_results/checkpoint-1512").to(device)
+        rob_cau = rob_cause = RobertaForSequenceClassification.from_pretrained(".", local_files_only=True).to(device)
         rob_cau.eval()
         
         tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
