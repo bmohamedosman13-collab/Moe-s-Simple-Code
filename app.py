@@ -13,13 +13,73 @@ survey_url = "https://docs.google.com/forms/d/e/1FAIpQLScJZaX8ZrrIHv6XKB-sVPpIJc
 
 # --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Insyte | Early Linguistic Examiner",
+    page_title="Insyte | Early Linguistic Analysis",
     page_icon="🧠",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
 # --- 2. AURORA BACKGROUND — injected into parent window via JS ---
+st.markdown("""
+<style>
+
+/* ── HERO SECTION ── */
+.hero-wrap {
+    text-align: center;
+    padding-bottom: 12px;
+}
+
+.hero-brand {
+    display: inline-block;
+    font-size: 4.5rem;   /* adjust if needed */
+    font-weight: 700;
+    line-height: 1.15;   /* prevents Y clipping */
+    padding-bottom: 8px; /* gives room for descender */
+}
+
+.hero-sub {
+    display: block;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    margin-top: 6px;
+    opacity: 0.8;
+}
+
+.divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 20px 0;
+}
+
+/* ── DEMO BUTTON ── */
+.demo-btn-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0 30px;
+}
+
+.survey-link {
+    display: inline-block;
+    color: #c4b5f4 !important;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 12px 28px;
+    border: 1px solid rgba(160,130,255,0.30);
+    border-radius: 8px;
+    background: rgba(100,60,200,0.12);
+    transition: all 0.2s;
+}
+
+.survey-link:hover {
+    background: rgba(100,60,200,0.28);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 aurora_injector = """
 <script>
 (function() {
@@ -187,7 +247,7 @@ custom_css = """
 
     /* ── EYEBROW ── */
     .eyebrow {
-        font-size: 0.7rem !important; letter-spacing: 0.2em !important;
+        font-size: 0.9rem !important; letter-spacing: 0.2em !important;
         text-transform: uppercase !important; color: #5a5080 !important;
         margin-bottom: 8px !important; display: block;
     }
@@ -246,13 +306,14 @@ custom_css = """
         transition: all 0.2s;
     }
     .survey-link:hover { background: rgba(100,60,200,0.28); }
-
-    /* ── DEMO BUTTON — centred via HTML, not st.columns ── */
+    
+        /* ── DEMO BUTTON — centred via HTML, not st.columns ── */
     .demo-btn-wrap {
         display: flex;
         justify-content: center;
         margin: 8px 0 20px;
     }
+
 
     /* ── BUTTONS ── */
     .stButton > button {
@@ -445,7 +506,7 @@ r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, error_msg = load_resour
 # ============================================================
 if not st.session_state.show_demo:
 
-    # HERO — inline-block with padding so gradient covers full "Insyte" incl. Y
+# HERO — inline-block with padding so gradient covers full "Insyte" incl. Y
     st.markdown("""
     <div class="hero-wrap">
         <span class="hero-brand">Insyte</span>
@@ -453,6 +514,7 @@ if not st.session_state.show_demo:
     </div>
     <div class="divider"></div>
     """, unsafe_allow_html=True)
+  
 
     # STAT COUNTER
     stat_html = """
