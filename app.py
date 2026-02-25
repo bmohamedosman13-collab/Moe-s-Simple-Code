@@ -13,73 +13,13 @@ survey_url = "https://docs.google.com/forms/d/e/1FAIpQLScJZaX8ZrrIHv6XKB-sVPpIJc
 
 # --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Insyte | Early Linguistic Analysis",
+    page_title="Insyte | Early Linguistic Examiner",
     page_icon="🧠",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
 # --- 2. AURORA BACKGROUND — injected into parent window via JS ---
-st.markdown("""
-<style>
-
-/* ── HERO SECTION ── */
-.hero-wrap {
-    text-align: center;
-    padding-bottom: 12px;
-}
-
-.hero-brand {
-    display: inline-block;
-    font-size: 4.5rem;   /* adjust if needed */
-    font-weight: 700;
-    line-height: 1.15;   /* prevents Y clipping */
-    padding-bottom: 8px; /* gives room for descender */
-}
-
-.hero-sub {
-    display: block;
-    font-size: 0.85rem;
-    letter-spacing: 0.15em;
-    margin-top: 6px;
-    opacity: 0.8;
-}
-
-.divider {
-    height: 1px;
-    background: rgba(255,255,255,0.08);
-    margin: 20px 0;
-}
-
-/* ── DEMO BUTTON ── */
-.demo-btn-wrap {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0 30px;
-}
-
-.survey-link {
-    display: inline-block;
-    color: #c4b5f4 !important;
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-decoration: none;
-    padding: 12px 28px;
-    border: 1px solid rgba(160,130,255,0.30);
-    border-radius: 8px;
-    background: rgba(100,60,200,0.12);
-    transition: all 0.2s;
-}
-
-.survey-link:hover {
-    background: rgba(100,60,200,0.28);
-}
-
-</style>
-""", unsafe_allow_html=True)
-
 aurora_injector = """
 <script>
 (function() {
@@ -196,24 +136,26 @@ custom_css = """
     /* ── HERO ── */
     .hero-wrap {
         text-align: center;
-        padding: 32px 0 14px;
+        /* generous padding so the tall letters (I, t) and Y ascender are never clipped */
+        padding: 48px 0 18px;
+        overflow: visible;
     }
     .hero-brand {
         font-family: 'DM Serif Display', serif !important;
         font-size: 7rem !important;
         font-weight: 400;
-        letter-spacing: -0.04em;
-        line-height: 1;
-        /* Full word gradient — wide enough to cover every letter including Y */
-        background: linear-gradient(110deg, #f0ebff 0%, #c4b5f4 30%, #8b5cf6 60%, #a78bfa 80%, #e0d4ff 100%);
-        background-size: 200% 100%;
+        letter-spacing: -0.02em;
+        /* tall line-height + padding so nothing is cropped */
+        line-height: 1.15;
+        padding: 8px 8px 10px 8px;
+        background: linear-gradient(110deg, #f0ebff 0%, #c4b5f4 25%, #8b5cf6 55%, #a78bfa 78%, #e8e0ff 100%);
+        background-size: 250% 100%;
         animation: brandGrad 5s ease infinite;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         display: inline-block;
-        /* padding prevents the descender/ascender clip */
-        padding: 0 4px 6px 4px;
+        overflow: visible;
     }
     @keyframes brandGrad {
         0%   { background-position: 0% 50%; }
@@ -247,7 +189,7 @@ custom_css = """
 
     /* ── EYEBROW ── */
     .eyebrow {
-        font-size: 0.9rem !important; letter-spacing: 0.2em !important;
+        font-size: 0.7rem !important; letter-spacing: 0.2em !important;
         text-transform: uppercase !important; color: #5a5080 !important;
         margin-bottom: 8px !important; display: block;
     }
@@ -306,16 +248,8 @@ custom_css = """
         transition: all 0.2s;
     }
     .survey-link:hover { background: rgba(100,60,200,0.28); }
-    
-        /* ── DEMO BUTTON — centred via HTML, not st.columns ── */
-    .demo-btn-wrap {
-        display: flex;
-        justify-content: center;
-        margin: 8px 0 20px;
-    }
 
-
-    /* ── BUTTONS ── */
+    /* ── ALL BUTTONS ── */
     .stButton > button {
         background: linear-gradient(135deg, #4e1d9e, #7c3aed) !important;
         color: #ede8ff !important;
@@ -327,11 +261,9 @@ custom_css = """
         border-radius: 10px !important;
         border: none !important;
         width: auto !important;
-        min-width: 220px;
+        min-width: 220px !important;
         box-shadow: 0 4px 20px rgba(90,30,180,0.38) !important;
         transition: all 0.2s !important;
-        display: block !important;
-        margin: 0 auto !important;
     }
     .stButton > button:hover {
         transform: translateY(-2px) !important;
@@ -506,7 +438,7 @@ r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, error_msg = load_resour
 # ============================================================
 if not st.session_state.show_demo:
 
-# HERO — inline-block with padding so gradient covers full "Insyte" incl. Y
+    # HERO — inline-block with padding so gradient covers full "Insyte" incl. Y
     st.markdown("""
     <div class="hero-wrap">
         <span class="hero-brand">Insyte</span>
@@ -514,7 +446,6 @@ if not st.session_state.show_demo:
     </div>
     <div class="divider"></div>
     """, unsafe_allow_html=True)
-  
 
     # STAT COUNTER
     stat_html = """
@@ -572,20 +503,20 @@ if not st.session_state.show_demo:
     <div class="glass-card">
         <span class="eyebrow">Why Insyte</span>
         <ul class="why-list">
-            <li><span class="bullet"></span>Linguistic signal detection from written patient discourse</li>
-            <li><span class="bullet"></span>Hybrid RoBERTa + ReHAN model architecture</li>
-            <li><span class="bullet"></span>Anonymized inputs — no identifiable data stored</li>
-            <li><span class="bullet"></span>Structured output designed for clinical review workflows</li>
+            <li><span class="bullet"></span>Detects Early Signs: Analyzes subtle language patterns to spot symptoms before they escalate.</li>
+            <li><span class="bullet"></span>Translates Raw Text: Converts patient writing into clear, objective clinical insights.</li>
+            <li><span class="bullet"></span>Reduces Burnout: Automates initial screening to lighten provider workloads.</li>
+            <li><span class="bullet"></span>Built Responsibly: Engineered with strict data privacy and clinical ethics.</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
 
-    # DEMO BUTTON — centred using HTML flex wrapper + single st.button
-    st.markdown('<div class="demo-btn-wrap">', unsafe_allow_html=True)
-    if st.button("Try the Demo →"):
-        st.session_state.show_demo = True
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # DEMO BUTTON — st.columns is the only 100% reliable centering in Streamlit
+    _l, _c, _r = st.columns([1.5, 1, 1.5])
+    with _c:
+        if st.button("Try the Demo →", use_container_width=True):
+            st.session_state.show_demo = True
+            st.rerun()
 
     # SURVEY BOX
     st.markdown(f"""
@@ -616,11 +547,11 @@ else:
 
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     user_input = st.text_area(
-        "Anonymized Patient Discourse",
+        "Anonymized Patient Text",
         height=240,
         placeholder="Paste anonymized intake text, session notes, or patient-authored content here…"
     )
-    analysis_type = st.radio("Analysis Mode", ["Severity", "Causality"], horizontal=True)
+    analysis_type = st.radio("Depression Analyzer, Select Mode", ["Severity", "Causality"], horizontal=True)
     run = st.button("Generate Clinical Insight →")
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -712,7 +643,7 @@ else:
 
             st.markdown("""
             <p style="font-size:0.82rem !important; color:#4a4068 !important; margin-top:24px; line-height:1.6 !important;">
-            This tool supports clinical decision-making only. It does not replace clinical judgment, diagnosis, or risk assessment protocols. All inputs must be anonymized prior to entry.
+            This tool supports clinical decision-making only. It does not replace clinical judgment, diagnosis, or risk assessment protocols. All inputs must be anonymized prior to entry. This is currently in pilot. 
             </p>
             """, unsafe_allow_html=True)
 
