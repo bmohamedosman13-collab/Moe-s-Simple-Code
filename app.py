@@ -19,375 +19,287 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. PREMIUM STYLING ---
+# --- 2. AURORA BACKGROUND — injected into parent window via JS ---
+# Streamlit iframes can reach window.parent to inject into the real page DOM
+aurora_injector = """
+<script>
+(function() {
+    var p = window.parent.document;
+    if (p.getElementById('insyte-aurora')) return; // already injected
+
+    // Inject Google Fonts
+    var font = p.createElement('link');
+    font.rel = 'stylesheet';
+    font.href = 'https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap';
+    p.head.appendChild(font);
+
+    // Build aurora container
+    var aurora = p.createElement('div');
+    aurora.id = 'insyte-aurora';
+    aurora.style.cssText = [
+        'position:fixed','top:0','left:0','width:100vw','height:100vh',
+        'z-index:0','pointer-events:none','overflow:hidden',
+        'background:#06030f'
+    ].join(';');
+
+    // Four animated orbs
+    var orbs = [
+        { w:750, h:520, bg:'#2e17a0', top:'-120px', left:'-180px', anim:'drift1' },
+        { w:620, h:480, bg:'#5e14b8', bottom:'-100px', right:'-120px', anim:'drift2' },
+        { w:520, h:420, bg:'#130847', top:'35%', left:'42%', anim:'drift3' },
+        { w:420, h:360, bg:'#3d0d90', top:'58%', left:'8%', anim:'drift4' },
+    ];
+    orbs.forEach(function(o) {
+        var d = p.createElement('div');
+        var pos = '';
+        if (o.top !== undefined)    pos += 'top:' + o.top + ';';
+        if (o.bottom !== undefined) pos += 'bottom:' + o.bottom + ';';
+        if (o.left !== undefined)   pos += 'left:' + o.left + ';';
+        if (o.right !== undefined)  pos += 'right:' + o.right + ';';
+        d.style.cssText = [
+            'position:absolute',
+            'width:' + o.w + 'px',
+            'height:' + o.h + 'px',
+            'border-radius:50%',
+            'background:radial-gradient(ellipse,' + o.bg + ' 0%,transparent 70%)',
+            'filter:blur(85px)',
+            'opacity:0.60',
+            'animation:' + o.anim + ' 18s ease-in-out infinite alternate',
+            pos
+        ].join(';');
+        aurora.appendChild(d);
+    });
+
+    // Keyframe CSS
+    var style = p.createElement('style');
+    style.textContent = `
+        @keyframes drift1 {
+            0%   { transform: translate(0,0) scale(1); }
+            50%  { transform: translate(90px,70px) scale(1.14); }
+            100% { transform: translate(35px,130px) scale(0.94); }
+        }
+        @keyframes drift2 {
+            0%   { transform: translate(0,0) scale(1); }
+            40%  { transform: translate(-110px,-90px) scale(1.12); }
+            100% { transform: translate(-55px,-150px) scale(1.06); }
+        }
+        @keyframes drift3 {
+            0%   { transform: translate(0,0) scale(1); }
+            60%  { transform: translate(70px,-80px) scale(1.18); }
+            100% { transform: translate(-45px,55px) scale(0.88); }
+        }
+        @keyframes drift4 {
+            0%   { transform: translate(0,0) scale(1); }
+            50%  { transform: translate(100px,-60px) scale(1.1); }
+            100% { transform: translate(25px,-110px) scale(1.12); }
+        }
+    `;
+    p.head.appendChild(style);
+
+    // Insert aurora as the very first child of body so it sits behind everything
+    p.body.insertBefore(aurora, p.body.firstChild);
+
+    // Make sure Streamlit's own containers are transparent
+    var patch = p.createElement('style');
+    patch.textContent = `
+        html, body { background: #06030f !important; }
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+            background: transparent !important;
+        }
+        /* Keep sidebar opaque */
+        section[data-testid="stSidebar"] {
+            background: rgba(7,3,20,0.88) !important;
+            backdrop-filter: blur(22px) !important;
+            border-right: 1px solid rgba(120,80,220,0.14) !important;
+        }
+    `;
+    p.head.appendChild(patch);
+})();
+</script>
+"""
+components.html(aurora_injector, height=0)
+
+# --- 3. MAIN CSS (content styling only — background handled above) ---
 custom_css = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
-
-    /* ── ANIMATED AURORA BACKGROUND ── */
-    .stApp {
-        background: #05030f;
-        color: #ede9f4;
-        font-family: 'DM Sans', sans-serif;
-        position: relative;
-        overflow-x: hidden;
-    }
-
-    /* Aurora layers rendered via pseudo-elements on a fixed overlay */
-    .stApp::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        background:
-            radial-gradient(ellipse 80% 60% at 20% 30%, rgba(72, 40, 180, 0.38) 0%, transparent 70%),
-            radial-gradient(ellipse 60% 50% at 80% 70%, rgba(120, 60, 200, 0.28) 0%, transparent 65%),
-            radial-gradient(ellipse 50% 40% at 55% 10%, rgba(30, 10, 90, 0.45) 0%, transparent 60%);
-        animation: auroraShift 14s ease-in-out infinite alternate;
-    }
-
-    .stApp::after {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        background:
-            radial-gradient(ellipse 70% 55% at 65% 80%, rgba(90, 20, 160, 0.25) 0%, transparent 60%),
-            radial-gradient(ellipse 40% 35% at 10% 80%, rgba(40, 10, 120, 0.30) 0%, transparent 55%);
-        animation: auroraShift2 18s ease-in-out infinite alternate;
-    }
-
-    @keyframes auroraShift {
-        0%   { transform: scale(1)   translate(0px, 0px); }
-        33%  { transform: scale(1.08) translate(-30px, 20px); }
-        66%  { transform: scale(0.95) translate(25px, -15px); }
-        100% { transform: scale(1.05) translate(-10px, 30px); }
-    }
-
-    @keyframes auroraShift2 {
-        0%   { transform: scale(1.02) translate(0px, 0px); }
-        40%  { transform: scale(0.96) translate(20px, -25px); }
-        80%  { transform: scale(1.06) translate(-15px, 15px); }
-        100% { transform: scale(1)   translate(10px, -10px); }
-    }
-
-    /* Noise grain overlay for depth */
-    body::after {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: 1;
-        pointer-events: none;
-        opacity: 0.035;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        background-size: 200px 200px;
-    }
-
-    /* Ensure all Streamlit content sits above aurora */
-    .main .block-container, section[data-testid="stSidebar"] { position: relative; z-index: 2; }
-
-    /* ── SIDEBAR ── */
-    section[data-testid="stSidebar"] {
-        background: rgba(8, 5, 20, 0.80) !important;
-        backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(150, 100, 255, 0.12);
-    }
-
-    section[data-testid="stSidebar"] .stMarkdown p {
-        font-size: 0.95rem !important;
-        line-height: 1.6 !important;
-        color: #b0a8cc;
-    }
-
-    section[data-testid="stSidebar"] h1 {
+    /* ── FONTS & BASE ── */
+    * { font-family: 'DM Sans', sans-serif; }
+    h1, h2, h3, .hero-brand, .result-label {
         font-family: 'DM Serif Display', serif !important;
-        font-size: 1.8rem !important;
-        color: #c4b5f4 !important;
-        letter-spacing: -0.02em;
     }
 
-    section[data-testid="stSidebar"] h3 {
-        font-size: 0.7rem !important;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        color: #7a6f99 !important;
-        font-family: 'DM Sans', sans-serif !important;
-        font-weight: 600;
-        margin-bottom: 8px !important;
+    /* ── LAYOUT ── */
+    .block-container {
+        max-width: 800px !important;
+        padding-top: 2.5rem !important;
+        padding-bottom: 4rem !important;
     }
 
-    .sidebar-nav-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 14px;
-        border-radius: 8px;
-        color: #c0b8d8;
-        font-size: 0.9rem;
-        transition: background 0.2s;
-        margin-bottom: 4px;
+    /* ── HEADINGS ── */
+    h1 {
+        font-size: 3.2rem !important; font-weight: 400 !important;
+        letter-spacing: -0.03em !important; line-height: 1.08 !important;
+        color: #f0eaff !important; margin-bottom: 6px !important;
     }
-
-    .sidebar-nav-item:hover { background: rgba(180, 150, 255, 0.1); }
-
-    .sidebar-dot {
-        width: 6px; height: 6px;
-        border-radius: 50%;
-        background: rgba(150, 120, 230, 0.5);
-        flex-shrink: 0;
+    h2 {
+        font-size: 1.9rem !important; font-weight: 400 !important;
+        color: #e0d4f8 !important; letter-spacing: -0.02em !important;
     }
+    h3 { font-size: 1.15rem !important; color: #b89ef0 !important; font-weight: 400 !important; }
+    p, li, label { font-size: 0.98rem !important; line-height: 1.72 !important; color: #c0b8d8 !important; }
 
-    /* ── TYPOGRAPHY ── */
-    h1, h2, h3 {
-        font-family: 'DM Serif Display', serif !important;
-        letter-spacing: -0.02em;
-    }
-
-    h1 { font-size: 3.6rem !important; font-weight: 400 !important; line-height: 1.08 !important; color: #f0eaf8 !important; }
-    h2 { font-size: 2.2rem !important; font-weight: 400 !important; color: #e2d9f3 !important; }
-    h3 { font-size: 1.3rem !important; color: #b89ef0 !important; font-weight: 400 !important; }
-
-    p, li, label, .stMarkdown p {
-        font-family: 'DM Sans', sans-serif !important;
-        font-size: 1.05rem !important;
-        line-height: 1.75 !important;
-        color: #c8c0dc;
-    }
-
-    /* ── MAIN CONTENT GLASS CARD ── */
-    .glass-card {
-        background: rgba(18, 12, 38, 0.55);
-        border: 1px solid rgba(160, 130, 255, 0.15);
-        border-radius: 16px;
-        backdrop-filter: blur(24px);
-        padding: 40px 44px;
-        margin-bottom: 24px;
-    }
-
-    /* ── HERO BRAND ── */
+    /* ── HERO ── */
     .hero-brand {
-        font-family: 'DM Serif Display', serif;
-        font-size: 5rem;
-        font-weight: 400;
-        letter-spacing: -0.04em;
-        line-height: 1;
-        background: linear-gradient(135deg, #e8e0ff 0%, #a78bfa 40%, #7c3aed 70%, #c4b5f4 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        font-size: 5.8rem !important; font-weight: 400;
+        letter-spacing: -0.04em; line-height: 1;
+        background: linear-gradient(135deg, #e8e0ff 0%, #a78bfa 45%, #7c3aed 75%, #c4b5f4 100%);
         background-size: 300% 300%;
-        animation: brandGradient 6s ease infinite;
+        animation: brandGrad 6s ease infinite;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        display: block; text-align: center;
     }
-
-    @keyframes brandGradient {
-        0%   { background-position: 0% 50%; }
-        50%  { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    @keyframes brandGrad {
+        0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; }
     }
-
     .hero-sub {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.85rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: #7a6f99;
-        margin-top: 4px;
+        font-size: 0.76rem; letter-spacing: 0.2em; text-transform: uppercase;
+        color: #4e4470; text-align: center; margin-top: 7px; display: block;
     }
 
     /* ── DIVIDER ── */
-    .styled-divider {
-        border: none;
-        height: 1px;
-        background: linear-gradient(to right, transparent, rgba(160, 130, 255, 0.3), transparent);
-        margin: 28px 0;
+    .divider {
+        border: none; height: 1px; margin: 26px 0;
+        background: linear-gradient(to right, transparent, rgba(140,100,255,0.22), transparent);
+    }
+
+    /* ── GLASS CARDS ── */
+    .glass-card {
+        background: rgba(12, 6, 28, 0.58);
+        border: 1px solid rgba(130, 90, 240, 0.15);
+        border-radius: 16px;
+        backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+        padding: 34px 38px; margin-bottom: 18px;
+    }
+
+    /* ── EYEBROW LABELS ── */
+    .eyebrow {
+        font-size: 0.66rem !important; letter-spacing: 0.2em !important;
+        text-transform: uppercase !important; color: #4e4470 !important;
+        margin-bottom: 7px !important; display: block;
     }
 
     /* ── TAG PILLS ── */
-    .tag-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
     .tag-pill {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.75rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #a78bfa;
-        background: rgba(120, 80, 220, 0.12);
-        border: 1px solid rgba(120, 80, 220, 0.25);
-        padding: 5px 14px;
-        border-radius: 100px;
-    }
-
-    /* ── STAT BLOCK ── */
-    .stat-block {
-        display: flex;
-        align-items: baseline;
-        gap: 14px;
-        margin: 12px 0 8px;
-    }
-    .stat-number {
-        font-family: 'DM Serif Display', serif;
-        font-size: 4.5rem;
-        line-height: 1;
-        background: linear-gradient(135deg, #c4b5f4, #7c3aed);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .stat-label {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 1rem;
-        color: #a09ac0;
-        max-width: 260px;
-        line-height: 1.4;
+        font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+        color: #a78bfa; background: rgba(100,60,200,0.10);
+        border: 1px solid rgba(100,60,200,0.22); padding: 4px 13px; border-radius: 100px;
     }
 
     /* ── TRUST BADGES ── */
-    .trust-row { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+    .trust-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     .trust-badge {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(30, 20, 60, 0.6);
-        border: 1px solid rgba(120, 90, 200, 0.2);
-        border-radius: 10px;
-        padding: 10px 16px;
-        font-size: 0.82rem;
-        color: #b0a8cc;
-        font-family: 'DM Sans', sans-serif;
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(16,8,40,0.72); border: 1px solid rgba(100,70,180,0.18);
+        border-radius: 9px; padding: 8px 13px;
+        font-size: 0.78rem; color: #9e96be;
     }
-    .trust-icon { font-size: 1.1rem; }
 
     /* ── SURVEY BOX ── */
     .survey-box {
-        background: rgba(80, 50, 160, 0.12);
-        border: 1px solid rgba(160, 130, 255, 0.2);
-        border-radius: 14px;
-        padding: 32px 36px;
-        text-align: center;
-        margin-top: 8px;
+        background: rgba(60,30,120,0.09); border: 1px solid rgba(140,100,255,0.17);
+        border-radius: 14px; padding: 32px 36px; text-align: center; margin-top: 6px;
     }
-    .survey-box h2 { font-size: 1.7rem !important; margin: 0 0 8px !important; }
-    .survey-box p { font-size: 0.95rem !important; color: #9890b8 !important; margin-bottom: 18px !important; }
     .survey-link {
-        display: inline-block;
-        color: #c4b5f4 !important;
-        font-size: 0.85rem !important;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        text-decoration: none;
-        padding: 12px 28px;
-        border: 1px solid rgba(180, 150, 255, 0.35);
-        border-radius: 8px;
-        transition: all 0.25s;
-        background: rgba(120, 80, 220, 0.1);
+        display: inline-block; color: #c4b5f4 !important;
+        font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em;
+        text-transform: uppercase; text-decoration: none;
+        padding: 11px 26px; border: 1px solid rgba(160,130,255,0.28);
+        border-radius: 8px; background: rgba(100,60,200,0.10); transition: all 0.2s;
     }
-    .survey-link:hover { background: rgba(120, 80, 220, 0.25); color: #e0d0ff !important; }
+    .survey-link:hover { background: rgba(100,60,200,0.26); }
 
-    /* ── BUTTON ── */
+    /* ── BUTTONS ── */
     .stButton > button {
-        background: linear-gradient(135deg, #6d28d9, #7c3aed) !important;
-        color: #f5f0ff !important;
-        font-family: 'DM Sans', sans-serif !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.08em !important;
-        text-transform: uppercase !important;
-        padding: 14px 32px !important;
-        border-radius: 10px !important;
-        border: none !important;
-        width: 100%;
-        transition: all 0.25s !important;
-        box-shadow: 0 4px 24px rgba(109, 40, 217, 0.35) !important;
+        background: linear-gradient(135deg, #4e1d9e, #7c3aed) !important;
+        color: #ede8ff !important; font-size: 0.82rem !important;
+        font-weight: 600 !important; letter-spacing: 0.1em !important;
+        text-transform: uppercase !important; padding: 13px 28px !important;
+        border-radius: 10px !important; border: none !important; width: 100%;
+        box-shadow: 0 4px 18px rgba(90,30,180,0.35) !important; transition: all 0.2s !important;
     }
     .stButton > button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 32px rgba(109, 40, 217, 0.5) !important;
-        background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
+        box-shadow: 0 8px 26px rgba(90,30,180,0.52) !important;
     }
 
-    /* ── TEXT AREA ── */
-    .stTextArea textarea {
-        background: rgba(15, 10, 35, 0.7) !important;
-        border: 1px solid rgba(120, 90, 200, 0.25) !important;
-        border-radius: 10px !important;
-        color: #e0d8f0 !important;
-        font-family: 'DM Sans', sans-serif !important;
-        font-size: 0.95rem !important;
-        line-height: 1.65 !important;
-        transition: border-color 0.2s !important;
+    /* ── TEXTAREA ── */
+    .stTextArea > div > div > textarea {
+        background: rgba(10,4,24,0.78) !important;
+        border: 1px solid rgba(100,70,180,0.24) !important;
+        border-radius: 10px !important; color: #dcd4f0 !important;
+        font-size: 0.94rem !important; line-height: 1.65 !important;
     }
-    .stTextArea textarea:focus {
-        border-color: rgba(160, 130, 255, 0.5) !important;
-        box-shadow: 0 0 0 3px rgba(120, 80, 220, 0.12) !important;
+    .stTextArea > div > div > textarea:focus {
+        border-color: rgba(140,100,255,0.48) !important;
+        box-shadow: 0 0 0 3px rgba(90,50,190,0.12) !important;
     }
 
     /* ── RADIO ── */
-    .stRadio > div { gap: 12px !important; }
-    .stRadio label {
-        font-size: 0.9rem !important;
-        color: #c0b8d8 !important;
-        font-family: 'DM Sans', sans-serif !important;
-    }
+    .stRadio label { font-size: 0.88rem !important; color: #b0a8cc !important; }
 
     /* ── METRICS ── */
     [data-testid="stMetric"] {
-        background: rgba(20, 12, 45, 0.6);
-        border: 1px solid rgba(120, 90, 200, 0.2);
-        border-radius: 12px;
-        padding: 16px 18px !important;
+        background: rgba(14,7,34,0.68) !important;
+        border: 1px solid rgba(100,70,180,0.17) !important;
+        border-radius: 12px !important; padding: 15px !important;
     }
-    [data-testid="stMetricLabel"] { font-size: 0.75rem !important; color: #7a6f99 !important; letter-spacing: 0.08em; text-transform: uppercase; }
-    [data-testid="stMetricValue"] { font-family: 'DM Serif Display', serif !important; font-size: 2rem !important; color: #c4b5f4 !important; }
+    [data-testid="stMetricLabel"] > div {
+        font-size: 0.68rem !important; text-transform: uppercase !important;
+        letter-spacing: 0.1em !important; color: #5e5280 !important;
+    }
+    [data-testid="stMetricValue"] > div {
+        font-family: 'DM Serif Display', serif !important;
+        font-size: 1.8rem !important; color: #c4b5f4 !important;
+    }
 
     /* ── PROGRESS ── */
-    .stProgress > div > div { background: linear-gradient(to right, #6d28d9, #a78bfa) !important; border-radius: 4px; }
-    .stProgress > div { background: rgba(40, 25, 80, 0.5) !important; border-radius: 4px; }
-
-    /* ── EVIDENCE SENTENCES ── */
-    .evidence-item {
-        background: rgba(20, 12, 45, 0.5);
-        border-left: 3px solid #7c3aed;
-        border-radius: 0 10px 10px 0;
-        padding: 14px 18px;
-        margin-bottom: 12px;
-    }
-    .evidence-text { font-size: 1rem !important; color: #d8d0ee !important; line-height: 1.6 !important; }
-    .evidence-score { font-size: 0.78rem; color: #9070c8; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px; }
-
-    /* ── CAPTION / SMALL TEXT ── */
-    .stCaption, small, .caption-text {
-        font-size: 0.75rem !important;
-        color: #5a5278 !important;
-        font-family: 'DM Sans', sans-serif !important;
-        letter-spacing: 0.04em;
+    .stProgress > div > div > div > div {
+        background: linear-gradient(to right, #4e1d9e, #a78bfa) !important;
     }
 
-    /* ── WARNING / ERROR ── */
-    .stAlert { border-radius: 10px !important; }
-
-    /* ── SECTION LABEL ── */
-    .section-eyebrow {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.7rem;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: #6d5fa0;
-        margin-bottom: 6px;
-    }
-
-    /* ── ASSESSMENT RESULT ── */
+    /* ── RESULT LABEL ── */
     .result-label {
-        font-family: 'DM Serif Display', serif;
-        font-size: 2.4rem;
-        color: #c4b5f4;
-        line-height: 1;
+        font-size: 2.5rem; color: #c4b5f4; line-height: 1.1; margin: 6px 0 0;
     }
 
-    /* Hide Streamlit branding */
-    #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding-top: 2.5rem !important; padding-bottom: 3rem !important; max-width: 820px !important; }
+    /* ── EVIDENCE ── */
+    .evidence-item {
+        background: rgba(14,7,34,0.55); border-left: 3px solid #7c3aed;
+        border-radius: 0 10px 10px 0; padding: 13px 17px; margin-bottom: 11px;
+    }
+    .evidence-text { font-size: 0.97rem !important; color: #d0c8e8 !important; line-height: 1.6 !important; }
+    .evidence-score { font-size: 0.7rem; color: #6e54a0; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+    /* ── SIDEBAR ── */
+    section[data-testid="stSidebar"] h1 {
+        font-family: 'DM Serif Display', serif !important;
+        font-size: 1.85rem !important; color: #c4b5f4 !important; letter-spacing: -0.02em !important;
+    }
+    section[data-testid="stSidebar"] p { font-size: 0.86rem !important; color: #8880a8 !important; }
+    section[data-testid="stSidebar"] h3 {
+        font-size: 0.66rem !important; text-transform: uppercase !important;
+        letter-spacing: 0.16em !important; color: #4e4470 !important; font-weight: 600 !important;
+    }
+    .nav-item {
+        display: flex; align-items: center; gap: 9px;
+        padding: 7px 11px; border-radius: 7px; color: #9e96be;
+        font-size: 0.84rem; margin-bottom: 3px;
+    }
+    .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(130,100,220,0.45); flex-shrink: 0; }
+
+    /* ── HIDE STREAMLIT CHROME ── */
+    #MainMenu, footer { visibility: hidden; }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -399,21 +311,21 @@ if 'show_demo' not in st.session_state:
 # --- 4. SIDEBAR ---
 with st.sidebar:
     st.markdown("<h1>Insyte</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='styled-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h3>Navigation</h3>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;height:1px;background:linear-gradient(to right,transparent,rgba(120,80,210,0.2),transparent);margin:10px 0 16px;'>", unsafe_allow_html=True)
+    st.markdown("<h3>Clinical Workflow</h3>", unsafe_allow_html=True)
     st.markdown("""
-    <div class='sidebar-nav-item'><div class='sidebar-dot'></div>Patient assessment tracking</div>
-    <div class='sidebar-nav-item'><div class='sidebar-dot'></div>Treatment progress monitoring</div>
-    <div class='sidebar-nav-item'><div class='sidebar-dot'></div>Structured clinical check-ins</div>
-    <div class='sidebar-nav-item'><div class='sidebar-dot'></div>Documentation support</div>
+    <div class='nav-item'><div class='nav-dot'></div>Patient assessment tracking</div>
+    <div class='nav-item'><div class='nav-dot'></div>Treatment progress monitoring</div>
+    <div class='nav-item'><div class='nav-dot'></div>Structured clinical check-ins</div>
+    <div class='nav-item'><div class='nav-dot'></div>Documentation support</div>
     """, unsafe_allow_html=True)
-    st.markdown("<div class='styled-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;height:1px;background:linear-gradient(to right,transparent,rgba(120,80,210,0.2),transparent);margin:16px 0;'>", unsafe_allow_html=True)
     if st.button("← Home"):
         st.session_state.show_demo = False
         st.rerun()
-    st.markdown("<p class='caption-text' style='margin-top:16px;'>Pilot v1.2 · Clinical Validation Phase</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.7rem !important; color:#332d50 !important; margin-top:12px; letter-spacing:0.06em;'>Pilot v1.2 · Clinical Validation Phase</p>", unsafe_allow_html=True)
 
-# --- 5. CORE ENGINE SETUP (UNCHANGED) ---
+# --- 5. CORE ENGINE (UNCHANGED) ---
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Attention(nn.Module):
@@ -467,107 +379,117 @@ def load_resources():
 
 r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, error_msg = load_resources()
 
-# --- 6. MAIN VIEW LOGIC ---
+# --- 6. LANDING PAGE ---
 if not st.session_state.show_demo:
 
-    # ── HERO ──
+    # HERO
     st.markdown("""
-    <div style='text-align:center; padding: 20px 0 8px;'>
-        <div class='hero-brand'>Insyte</div>
-        <div class='hero-sub'>Early Linguistic Examiner · Clinical Pilot</div>
+    <div style="text-align:center; padding: 28px 0 12px;">
+        <span class="hero-brand">Insyte</span>
+        <span class="hero-sub">Early Linguistic Examiner &nbsp;·&nbsp; Clinical Pilot</span>
     </div>
+    <div class="divider"></div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div class='styled-divider'></div>", unsafe_allow_html=True)
-
-    # ── ANIMATED COUNT-UP STAT ──
-    count_up_html = """
-    <div style="text-align:center; padding: 28px 0 20px;">
-        <div style="font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:#5a5278; font-family:'DM Sans',sans-serif; margin-bottom:10px;">The Problem</div>
-        <div style="display:flex; align-items:baseline; justify-content:center; gap:16px;">
-            <div id="counter" style="font-family:'DM Serif Display',serif; font-size:5.5rem; line-height:1; background:linear-gradient(135deg,#c4b5f4,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
-            <div style="font-family:'DM Sans',sans-serif; font-size:1rem; color:#9890b8; max-width:220px; text-align:left; line-height:1.4;">people die by suicide annually in Canada<br><span style='color:#5a5278; font-size:0.8rem;'>Statistics Canada</span></div>
+    # ANIMATED STAT COUNTER
+    stat_html = """
+    <div style="text-align:center; padding:28px 20px 22px; font-family:'DM Sans',sans-serif;">
+        <div style="font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:#4a3f68; margin-bottom:16px;">The Scale of the Problem</div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:22px; flex-wrap:wrap;">
+            <div id="stat-num" style="
+                font-family:'DM Serif Display',serif;
+                font-size:6rem; line-height:1;
+                background:linear-gradient(135deg,#c4b5f4 0%,#7c3aed 60%);
+                -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+            ">0</div>
+            <div style="font-size:0.92rem; color:#7870a0; max-width:190px; text-align:left; line-height:1.55;">
+                people die by suicide annually in Canada
+                <div style="font-size:0.7rem; color:#3e3560; margin-top:5px; letter-spacing:0.07em;">— Statistics Canada</div>
+            </div>
         </div>
     </div>
     <script>
-        let startTimestamp = null;
-        const duration = 2800;
-        const finalValue = 4500;
-        const element = document.getElementById('counter');
-        const easeOutExpo = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-        const step = (timestamp) => {
-            if (!startTimestamp) startTimestamp = timestamp;
-            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            const eased = easeOutExpo(progress);
-            element.innerHTML = Math.floor(eased * finalValue).toLocaleString();
-            if (progress < 1) window.requestAnimationFrame(step);
-        };
-        window.requestAnimationFrame(step);
+    (function(){
+        var start=null, dur=2800, target=4500;
+        var el=document.getElementById('stat-num');
+        function ease(t){ return 1-Math.pow(1-t,4); }
+        function step(ts){
+            if(!start) start=ts;
+            var p=Math.min((ts-start)/dur,1);
+            el.textContent=Math.floor(ease(p)*target).toLocaleString();
+            if(p<1) requestAnimationFrame(step);
+            else el.textContent=target.toLocaleString();
+        }
+        requestAnimationFrame(step);
+    })();
     </script>
     """
-    components.html(count_up_html, height=190)
+    components.html(stat_html, height=185)
 
-    # ── MISSION + WHO IT'S FOR ──
+    # MISSION CARD
     st.markdown("""
-    <div class='glass-card'>
-        <div class='tag-row'>
-            <span class='tag-pill'>For Psychologists</span>
-            <span class='tag-pill'>For Mental Health Clinicians</span>
-            <span class='tag-pill'>Written Intake Analysis</span>
+    <div class="glass-card">
+        <div class="tag-row">
+            <span class="tag-pill">For Psychologists</span>
+            <span class="tag-pill">Mental Health Clinicians</span>
+            <span class="tag-pill">Written Intake Analysis</span>
         </div>
-        <div class='section-eyebrow'>The Mission</div>
-        <p style='font-size:1.1rem !important; color:#d8d0ee !important; margin-bottom:18px;'>
+        <span class="eyebrow">The Mission</span>
+        <p style="font-size:1.05rem !important; color:#d4cce8 !important; margin-bottom:13px;">
             Clinicians face relentless caseloads and documentation pressure. Early warning signals buried in patient language go undetected — not from lack of skill, but lack of time.
         </p>
-        <p style='font-size:1.05rem !important; color:#b0a8cc !important; margin-bottom:0;'>
+        <p style="color:#9890b8 !important; margin-bottom:0;">
             Insyte builds AI-assisted tools that surface structured clinical insight from written intake and assessment materials — giving you a sharper lens, faster.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── WHY USE IT ──
+    # TRUST CARD
     st.markdown("""
-    <div class='glass-card'>
-        <div class='section-eyebrow'>Why Insyte</div>
-        <div class='trust-row'>
-            <div class='trust-badge'><span class='trust-icon'>🔍</span> Linguistic signal detection</div>
-            <div class='trust-badge'><span class='trust-icon'>🤖</span> RoBERTa + ReHAN hybrid model</div>
-            <div class='trust-badge'><span class='trust-icon'>🔒</span> Anonymized inputs only</div>
-            <div class='trust-badge'><span class='trust-icon'>📋</span> Structured for clinical review</div>
+    <div class="glass-card">
+        <span class="eyebrow">Why Insyte</span>
+        <div class="trust-row">
+            <div class="trust-badge">🔍&nbsp; Linguistic signal detection</div>
+            <div class="trust-badge">🤖&nbsp; RoBERTa + ReHAN hybrid</div>
+            <div class="trust-badge">🔒&nbsp; Anonymized inputs only</div>
+            <div class="trust-badge">📋&nbsp; Structured for clinical review</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── CTA BUTTON ──
+    # CTA BUTTON
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
-        if st.button("Try the demo →"):
+        if st.button("Try the Demo →"):
             st.session_state.show_demo = True
             st.rerun()
 
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
-    # ── SURVEY BOX ──
+    # SURVEY BOX
     st.markdown(f"""
     <div class="survey-box">
-        <div class='section-eyebrow' style='text-align:center;'>Shape this tool</div>
-        <h2>Help shape what this becomes.</h2>
-        <p>This is a clinical pilot. Your feedback — from clinicians, for clinicians — defines the roadmap.</p>
+        <span class="eyebrow" style="text-align:center; display:block;">Shape This Tool</span>
+        <h2 style="margin:8px 0 10px !important;">Help shape what this becomes.</h2>
+        <p style="color:#6a608a !important; font-size:0.9rem !important; margin-bottom:22px;">
+            This is a clinical pilot. Your feedback — from clinicians, for clinicians — defines the roadmap.
+        </p>
         <a href="{survey_url}" class="survey-link" target="_blank">Share Your Feedback →</a>
     </div>
     """, unsafe_allow_html=True)
 
+# --- 7. DEMO TOOL ---
 else:
-    # --- TOOL VIEW ---
     st.markdown("""
-    <div style='margin-bottom: 4px;'>
-        <div class='section-eyebrow'>Insyte · Early Linguistic Examiner</div>
-        <h1 style='font-size:2.6rem !important; margin-bottom:4px !important;'>Patient Discourse Analysis</h1>
-        <p style='color:#6d5fa0; font-size:0.9rem !important; margin-top:0;'>Clinical Pilot · Semantic Analysis Engine · Handle all inputs with care</p>
+    <div style="margin-bottom:8px;">
+        <span class="eyebrow">Insyte · Early Linguistic Examiner</span>
+        <h1 style="font-size:2.5rem !important; margin-bottom:4px !important;">Patient Discourse Analysis</h1>
+        <p style="color:#4a4068 !important; font-size:0.83rem !important; margin-top:0 !important;">
+            Clinical Pilot · Semantic Analysis Engine · Handle all inputs with care
+        </p>
     </div>
+    <div class="divider"></div>
     """, unsafe_allow_html=True)
-
-    st.markdown("<div class='styled-divider'></div>", unsafe_allow_html=True)
 
     if error_msg:
         st.error(f"Model Load Error: {error_msg}")
@@ -580,7 +502,6 @@ else:
         placeholder="Paste anonymized intake text, session notes, or patient-authored content here…"
     )
     analysis_type = st.radio("Analysis Mode", ["Severity", "Causality"], horizontal=True)
-
     run = st.button("Generate Clinical Insight →")
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -617,15 +538,14 @@ else:
                     else: final_label = "Severe"
 
                 st.markdown(f"""
-                <div class='glass-card' style='margin-top:20px;'>
-                    <div class='section-eyebrow'>Severity Assessment</div>
-                    <div class='result-label'>{final_label}</div>
+                <div class="glass-card" style="margin-top:20px;">
+                    <span class="eyebrow">Severity Assessment</span>
+                    <div class="result-label">{final_label}</div>
                 </div>
                 """, unsafe_allow_html=True)
-
                 cols = st.columns(3)
-                cols[0].metric("RoBERTa Confidence", f"{p_severe:.2f}")
-                cols[1].metric("ReHAN Attribution", f"{rehan_signal:.2f}")
+                cols[0].metric("RoBERTa Score", f"{p_severe:.2f}")
+                cols[1].metric("ReHAN Signal", f"{rehan_signal:.2f}")
                 cols[2].metric("Composite Index", f"{raw_hybrid:.2f}")
 
             else:
@@ -647,17 +567,15 @@ else:
                 result_cause = causes[rob_idx.item()] if hybrid_cau >= 0.40 else "Inconclusive"
 
                 st.markdown(f"""
-                <div class='glass-card' style='margin-top:20px;'>
-                    <div class='section-eyebrow'>Primary Thematic Determinant</div>
-                    <div class='result-label'>{result_cause}</div>
-                    <div style='margin-top:16px;'>
+                <div class="glass-card" style="margin-top:20px;">
+                    <span class="eyebrow">Primary Thematic Determinant</span>
+                    <div class="result-label">{result_cause}</div>
+                </div>
                 """, unsafe_allow_html=True)
                 st.progress(hybrid_cau)
-                st.markdown("</div></div>", unsafe_allow_html=True)
 
-            # ── LINGUISTIC EVIDENCE ──
-            st.markdown("<div class='styled-divider'></div>", unsafe_allow_html=True)
-            st.markdown("<div class='section-eyebrow'>Linguistic Evidence · High-Signal Passages</div>", unsafe_allow_html=True)
+            st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+            st.markdown("<span class='eyebrow'>Linguistic Evidence · High-Signal Passages</span>", unsafe_allow_html=True)
 
             imp_list = importance if isinstance(importance, list) else [importance]
             found = False
@@ -665,17 +583,17 @@ else:
                 if score > 0.15:
                     found = True
                     st.markdown(f"""
-                    <div class='evidence-item'>
-                        <div class='evidence-text'>{sent}</div>
-                        <div class='evidence-score'>Signal Intensity · {score:.2f}</div>
+                    <div class="evidence-item">
+                        <div class="evidence-text">{sent}</div>
+                        <div class="evidence-score">Signal Intensity · {score:.2f}</div>
                     </div>
                     """, unsafe_allow_html=True)
             if not found:
-                st.markdown("<p style='color:#5a5278; font-size:0.9rem !important;'>No high-signal passages detected above threshold.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#3e3560 !important; font-size:0.86rem !important;'>No passages exceeded signal threshold.</p>", unsafe_allow_html=True)
 
             st.markdown("""
-            <p style='font-size:0.78rem !important; color:#3d3558 !important; margin-top:24px; line-height:1.5 !important;'>
-            This tool is for clinical decision support only. It does not replace clinical judgment, diagnosis, or risk assessment protocols.
+            <p style="font-size:0.73rem !important; color:#2e2848 !important; margin-top:22px; line-height:1.5 !important;">
+            ⚠ This tool supports clinical decision-making only. It does not replace clinical judgment, diagnosis, or risk assessment protocols. All inputs must be anonymized.
             </p>
             """, unsafe_allow_html=True)
 
