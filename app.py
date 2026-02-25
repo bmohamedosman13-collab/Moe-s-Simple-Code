@@ -9,7 +9,6 @@ import os
 import streamlit.components.v1 as components
 
 # --- 0. CONFIGURATION ---
-# Replace with your actual survey URL
 survey_url = "https://docs.google.com/forms/d/e/1FAIpQLScJZaX8ZrrIHv6XKB-sVPpIJcJlMUl7GUb5mbGCBQYzAj-WPQ/viewform" 
 
 # --- 1. PAGE CONFIGURATION ---
@@ -20,17 +19,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. PREMIUM STYLING (PLAYFAIR DISPLAY & HIGH READABILITY) ---
+# --- 2. PREMIUM STYLING ---
 custom_css = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap');
 
-    /* Global Typography + Clinical Plum Gradient */
+    /* Global Typography + Animated Deep Plum/Grey/Black Gradient */
     .stApp {
-        background: linear-gradient(-45deg, #141018, #1B1622, #221A2B, #2A2034);
+        background: linear-gradient(-45deg, #0a0a0a, #141018, #1B1622, #000000);
         background-size: 400% 400%;
-        animation: gradientMove 32s ease infinite;
-
+        animation: gradientMove 15s ease infinite;
         color: #f5f5f5;
         font-family: 'Playfair Display', serif;
     }
@@ -41,75 +39,54 @@ custom_css = """
         100% { background-position: 0% 50%; }
     }
 
+    /* Aesthetic "I" enlargement for Insyte branding */
+    .insyte-brand { font-family: 'Playfair Display', serif; font-weight: 700; }
+    .insyte-brand::first-letter { font-size: 1.3em; color: #9C8ACF; }
+
     /* Massive Headings */
-    h1 { 
-        font-size: 4.5rem !important; 
-        font-weight: 700 !important; 
-        margin-bottom: 0px !important; 
-    }
+    h1 { font-size: 4.5rem !important; font-weight: 700 !important; margin-bottom: 0px !important; }
+    h2 { font-size: 3rem !important; font-weight: 400 !important; }
+    h3 { font-size: 2.2rem !important; font-weight: 400 !important; color: #9C8ACF !important; }
 
-    h2 { 
-        font-size: 3rem !important; 
-        font-weight: 400 !important; 
+    /* Sidebar - Smaller Text */
+    section[data-testid="stSidebar"] .stMarkdown p {
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
     }
-
-    h3 { 
-        font-size: 2.2rem !important; 
-        font-weight: 400 !important; 
-        color: #9C8ACF !important;   /* muted clinical lavender */
-    }
+    section[data-testid="stSidebar"] h1 { font-size: 2rem !important; }
 
     /* Large, Readable Body Text */
     p, li, label {
         font-family: 'Inter', sans-serif;
-        font-size: 1.4rem !important;
-        line-height: 1.8 !important;
+        font-size: 1.3rem !important;
+        line-height: 1.7 !important;
         color: #D6D3DD;
     }
 
-    /* Metric & UI elements */
-    .stMetric label { font-size: 1.2rem !important; }
-    .stMetric div { font-size: 2.5rem !important; }
-
-    /* Salient Survey Box */
+    /* Survey Box Styling */
     .survey-box {
-        background-color: rgba(156, 138, 207, 0.12);
-        border: 1px solid #9C8ACF;
-        padding: 30px;
+        background-color: rgba(156, 138, 207, 0.08);
+        border: 1px solid rgba(156, 138, 207, 0.3);
+        padding: 25px;
         border-radius: 12px;
         text-align: center;
-        margin-bottom: 40px;
+        margin-top: 20px;
     }
-
-    .survey-link {
-        color: #9C8ACF !important;
-        font-size: 1.8rem !important;
-        font-weight: 700;
-        text-decoration: underline !important;
-    }
+    .survey-link { color: #9C8ACF !important; font-size: 1.5rem !important; font-weight: 700; }
 
     /* Premium Button */
     .stButton>button {
         background-color: #9C8ACF !important;
         color: #141018 !important;
-        font-size: 1.6rem !important;
+        font-size: 1.4rem !important;
         font-weight: 700 !important;
-        padding: 15px 40px !important;
+        padding: 12px 30px !important;
         border-radius: 8px !important;
         border: none !important;
         width: 100%;
-        transition: transform 0.2s ease;
+        transition: 0.3s;
     }
-
-    .stButton>button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 10px 25px rgba(156, 138, 207, 0.25);
-    }
-
-    hr { 
-        border-top: 1px solid rgba(255,255,255,0.08); 
-        margin: 3rem 0; 
-    }
+    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(156, 138, 207, 0.2); }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -118,9 +95,9 @@ st.markdown(custom_css, unsafe_allow_html=True)
 if 'show_demo' not in st.session_state:
     st.session_state.show_demo = False
 
-# --- 4. SIDEBAR (RESTORED WITH FEATURES) ---
+# --- 4. SIDEBAR (Smaller Text) ---
 with st.sidebar:
-    st.markdown("<h1 style='font-size: 2.4rem !important;'>Insyte</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='insyte-brand'>Insyte</h1>", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### Clinical Workflow Roadmap")
     st.markdown("""
@@ -133,12 +110,9 @@ with st.sidebar:
     if st.button("Home"):
         st.session_state.show_demo = False
         st.rerun()
-    st.markdown("---")
     st.caption("Pilot v1.2 | Clinical Validation Phase")
 
-# ==========================================
-# CORE ENGINE SETUP (WITH FIXED PATHING)
-# ==========================================
+# --- 5. CORE ENGINE SETUP ---
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Attention(nn.Module):
@@ -158,7 +132,6 @@ class ReHAN(nn.Module):
         self.sent_rnn = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
         self.sent_att = Attention(hidden_dim)
         self.fc = nn.Linear(hidden_dim, num_classes)
-        
     def forward(self, docs):
         B, S, W = docs.size()
         docs_flat = docs.view(B * S, W)
@@ -173,50 +146,36 @@ class ReHAN(nn.Module):
 @st.cache_resource
 def load_resources():
     try:
-        # ABSOLUTE PATH FIX: Streamlit Cloud uses /mount/src/[repo-name]
-        # We target the directory where app.py lives
         base_path = os.path.dirname(os.path.abspath(__file__))
-        
         with open(os.path.join(base_path, "rehan_severity_vocab.pkl"), "rb") as f: v_sev = pickle.load(f)
         with open(os.path.join(base_path, "rehan_cause_vocab.pkl"), "rb") as f: v_cau = pickle.load(f)
-        
         r_sev = ReHAN(len(v_sev), 200, 128, 4).to(device)
         r_sev.load_state_dict(torch.load(os.path.join(base_path, "rehan_severity.pt"), map_location=device))
         r_sev.eval()
-        
         r_cau = ReHAN(len(v_cau), 200, 128, 6).to(device)
         r_cau.load_state_dict(torch.load(os.path.join(base_path, "rehan_cause.pt"), map_location=device))
         r_cau.eval()
-        
-        # Load RoBERTa from the base directory
         rob_sev = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device)
         rob_sev.eval()
-        
         rob_cau = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device)
         rob_cau.eval()        
-        
         tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
-        
         return r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, None
     except Exception as e:
         return None, None, None, None, None, None, None, str(e)
 
 r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, error_msg = load_resources()
 
-# ==========================================
-#         MAIN VIEW LOGIC
-# ==========================================
-
+# --- 6. MAIN VIEW LOGIC ---
 if not st.session_state.show_demo:
-    # --- LANDING PAGE ---
-    st.markdown("<h1 style='text-align: center; color: #8d7dca;'>Insyte</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #8d7dca;' class='insyte-brand'>Insyte</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; font-size: 1.8rem !important; color: #a0a0a0; margin-top: -20px;'>Early Linguistic Examiner</p>", unsafe_allow_html=True)
     st.markdown("<hr>", unsafe_allow_html=True)
 
     count_up_html = """
     <div style="text-align: center; padding: 20px;">
         <div id="counter" style="font-size: 6rem; font-weight: 700; color: #8d7dca; margin-bottom: 10px; line-height: 1; font-family: 'Playfair Display', serif;">0</div>
-        <div style="font-size: 1.6rem; color: #d0d0d0; font-family: 'Inter', sans-serif;">people die by suicide annually in Canada(Statistics Canada).</div>
+        <div style="font-size: 1.6rem; color: #d0d0d0; font-family: 'Inter', sans-serif;">people die by suicide annually in Canada (Statistics Canada).</div>
     </div>
     <script>
         let startTimestamp = null;
@@ -235,26 +194,17 @@ if not st.session_state.show_demo:
     """
     components.html(count_up_html, height=250)
 
-    st.markdown("""
-    Clinicians face increasing caseloads and documentation burdens, making early signal detection difficult.
-    
-    Insyte builds AI-assisted tools that support structured clinical insight for psychologists and mental health clinicians reviewing written intake and assessment materials.
-    
-    Quickly analyze patient discourse to surface symptom severity signals and potential contributing factors
-    """)
+    st.markdown("Clinicians face increasing caseloads and documentation burdens, making early signal detection difficult. Insyte builds AI-assisted tools that support structured clinical insight for psychologists and mental health clinicians reviewing written intake and assessment materials.")
     st.markdown("<hr>", unsafe_allow_html=True)
     
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("### About Insyte")
-        st.markdown("Insyte is an early-stage clinical support tool designed to assist psychologists in reviewing written intake and assessment materials more efficiently. This prototype is currently in pilot testing and is not clinically validated.")
-    with c2:
-        st.markdown("### How it helps")
-        st.markdown("* Highlights symptom language patterns\n* Generates structured summaries\n* Supports clinical decision-making")
-        
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # SALIENT SURVEY SECTION
+    # DEMO BUTTON (NOW ABOVE SURVEY BOX)
+    _, col_btn, _ = st.columns([1, 2, 1])
+    with col_btn:
+        if st.button("Demo the tool →", use_container_width=True):
+            st.session_state.show_demo = True
+            st.rerun()
+
+    # SURVEY BOX (BELOW BUTTON)
     st.markdown(f"""
     <div class="survey-box">
         <h2 style="margin-top: 0;">Help shape the future.</h2>
@@ -262,30 +212,19 @@ if not st.session_state.show_demo:
         <a href="{survey_url}" class="survey-link" target="_blank">Feedback Survey →</a>
     </div>
     """, unsafe_allow_html=True)
-    
-    # DEMO BUTTON
-    _, col_btn, _ = st.columns([1, 2, 1])
-    with col_btn:
-        if st.button("Demo the tool →", use_container_width=True):
-            st.session_state.show_demo = True
-            st.rerun()
 
 else:
-    # --- TOOL / DEMO VIEW ---
-    st.markdown("<h1 style='font-size: 3rem !important;'>Early Linguistic Examiner</h1>", unsafe_allow_html=True)
+    # --- TOOL VIEW ---
+    st.markdown("<h1 style='font-size: 3rem !important;' class='insyte-brand'>Early Linguistic Examiner</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color: #a0a0a0; margin-top: -20px;'>Clinical Pilot | Semantic Analysis Engine</p>", unsafe_allow_html=True)
     st.markdown("<hr>", unsafe_allow_html=True)
 
     if error_msg:
-        st.error(f"**Critical Error Loading Models:** {error_msg}")
-        st.info("💡 **Developer Tip:** Ensure safetensors is in your requirements.txt file on GitHub.")
+        st.error(f"Critical Error: {error_msg}")
         st.stop()
 
     user_input = st.text_area("Patient Discourse Input:", height=250, placeholder="Enter anonymized patient text here...")
-    
-    col_mode, col_spacer = st.columns([2, 1])
-    with col_mode:
-        analysis_type = st.radio("Analysis Mode:", ["Severity", "Causality"], horizontal=True)
+    analysis_type = st.radio("Analysis Mode:", ["Severity", "Causality"], horizontal=True)
 
     if st.button("Generate Insights"):
         if user_input.strip():
@@ -295,12 +234,7 @@ else:
             with torch.no_grad():
                 sev_out = rob_sev(**inputs)
                 sev_probs = F.softmax(sev_out.logits, dim=1)[0]
-            
-                if sev_probs.shape[0] == 2:
-                    p_non_severe, p_severe = sev_probs.tolist()
-                else:
-                    st.error(f"Unexpected severity output shape: {sev_probs.shape}")
-                    st.stop()                      
+                p_non_severe, p_severe = sev_probs.tolist()
 
             if analysis_type == "Severity":
                 with torch.no_grad():
@@ -316,10 +250,8 @@ else:
                 rehan_signal = min(sum(w for w in importance if w > 0.15), 1.0)
                 raw_hybrid = (p_severe * 0.6) + (rehan_signal * 0.4)
             
-                if p_non_severe > 0.85 and len(user_input.split()) < 12:
-                    final_label = "Healthy Range"
-                elif p_severe > 0.75:
-                    final_label = "Severe"
+                if p_non_severe > 0.85 and len(user_input.split()) < 12: final_label = "Healthy Range"
+                elif p_severe > 0.75: final_label = "Severe"
                 else:
                     if raw_hybrid < 0.25: final_label = "Minimum"
                     elif raw_hybrid < 0.45: final_label = "Mild"
@@ -343,29 +275,18 @@ else:
                             tensor_cau[i, j] = v_cau.get(word, v_cau.get("<UNK>", 1))
                     _, weights_cau = r_cau(tensor_cau.unsqueeze(0))
                     importance = weights_cau.squeeze().cpu().tolist()
-                    if isinstance(importance, float): importance = [importance]
-
                 causes = ["No Reason", "Bias", "Job/Career", "Medication", "Relationship", "Alienation"]
                 rob_max, rob_idx = torch.max(cau_probs, dim=0)
-                rehan_cau_sig = min(sum(w for w in importance if w > 0.18), 1.0)
+                rehan_cau_sig = min(sum(w for w in (importance if isinstance(importance, list) else [importance]) if w > 0.18), 1.0)
                 hybrid_cau = (rob_max.item() * 0.5) + (rehan_cau_sig * 0.5)
                 result_cause = causes[rob_idx.item()] if hybrid_cau >= 0.40 else "Inconclusive"
-
                 st.markdown(f"### Primary Thematic Determinant: <span style='color:#8d7dca;'>{result_cause}</span>", unsafe_allow_html=True)
                 st.progress(hybrid_cau)
 
             st.markdown("---")
             st.markdown("### Linguistic Evidence Analysis")
-            for score, sent in zip(importance, raw_sentences):
+            for score, sent in zip((importance if isinstance(importance, list) else [importance]), raw_sentences):
                 if score > 0.15:
                     st.markdown(f"<p style='font-size: 1.1rem !important; border-left: 3px solid #8d7dca; padding-left: 15px;'>{sent} <br><span style='color:#8d7dca; font-size: 0.9rem;'>Signal Intensity: {score:.2f}</span></p>", unsafe_allow_html=True)
         else:
             st.warning("Input required.")
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("#### Important Notice")
-    st.markdown("""
-    <div style='background-color: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 8px; font-size: 1.1rem;'>
-        This tool is a clinical support prototype. It is not intended to replace professional diagnostic judgment or treatment decisions.
-    </div>
-    """, unsafe_allow_html=True)
