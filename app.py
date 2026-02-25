@@ -487,13 +487,7 @@ if not st.session_state.show_demo:
     <div class="glass-card">
         <span class="eyebrow">About Insyte</span>
         <p style="color:#cdc5e2 !important; margin-bottom:14px;">
-            Clinicians face increasing caseloads and documentation burdens, making early signal detection difficult.
-        </p>
-        <p style="color:#cdc5e2 !important; margin-bottom:14px;">
-            Insyte builds AI-assisted tools to support structured clinical insight for psychologists and mental health clinicians reviewing written intake and assessment materials.
-        </p>
-        <p style="color:#cdc5e2 !important; margin-bottom:0;">
-            Analyze patient discourse to identify symptom severity and potential contributing factors in seconds.
+            Insyte is an AI-powered co-pilot for mental health clinicians. We help psychologists navigate heavy caseloads by transforming written intake and assessment materials into objective clinical insights in seconds. By surfacing early warning signs early, we empower providers to focus on what matters most: the patient.
         </p>
     </div>
     """, unsafe_allow_html=True)
