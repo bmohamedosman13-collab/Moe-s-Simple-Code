@@ -414,43 +414,105 @@ class ReHAN(nn.Module):
         return self.fc(doc_vec), sent_weights
 
 @st.cache_resource
+class Attention(nn.Module):
+
+    def __init__(self, hidden_dim):
+
+        super().__init__()
+
+        self.attention = nn.Linear(hidden_dim, 1)
+
+    def forward(self, x):
+
+        weights = torch.softmax(self.attention(x), dim=1)
+
+        return (x * weights).sum(dim=1), weights
+
+
+
+class ReHAN(nn.Module):
+
+    def __init__(self, vocab_size, embed_dim, hidden_dim, num_classes):
+
+        super().__init__()
+
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
+
+        self.word_rnn = nn.GRU(embed_dim, hidden_dim, batch_first=True)
+
+        self.word_att = Attention(hidden_dim)
+
+        self.sent_rnn = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+
+        self.sent_att = Attention(hidden_dim)
+
+        self.fc = nn.Linear(hidden_dim, num_classes)
+
+    def forward(self, docs):
+
+        B, S, W = docs.size()
+
+        docs_flat = docs.view(B * S, W)
+
+        emb = self.embedding(docs_flat)
+
+        h_word, _ = self.word_rnn(emb)
+
+        s_word, _ = self.word_att(h_word)
+
+        sent_vecs = s_word.view(B, S, -1)
+
+        h_sent, _ = self.sent_rnn(sent_vecs)
+
+        doc_vec, sent_weights = self.sent_att(h_sent)
+
+        return self.fc(doc_vec), sent_weights
+
+
+
+@st.cache_resource
+
 def load_resources():
+
     try:
+
         base_path = os.path.dirname(os.path.abspath(__file__))
-        
-        # 1. Load Vocabularies
+
         with open(os.path.join(base_path, "rehan_severity_vocab.pkl"), "rb") as f: v_sev = pickle.load(f)
+
         with open(os.path.join(base_path, "rehan_cause_vocab.pkl"), "rb") as f: v_cau = pickle.load(f)
-        
-        # 2. Load ReHAN Models
+
         r_sev = ReHAN(len(v_sev), 200, 128, 4).to(device)
+
         r_sev.load_state_dict(torch.load(os.path.join(base_path, "rehan_severity.pt"), map_location=device))
+
         r_sev.eval()
-        
+
         r_cau = ReHAN(len(v_cau), 200, 128, 6).to(device)
+
         r_cau.load_state_dict(torch.load(os.path.join(base_path, "rehan_cause.pt"), map_location=device))
+
         r_cau.eval()
-        
-        # 3. Load RoBERTa Models (CRITICAL FIX)
-        # We load the base architecture AND then inject your trained weights
-        rob_sev = RobertaForSequenceClassification.from_pretrained("roberta-base", num_labels=2).to(device)
-        # CHANGE 'rob_sev_weights.pt' to your actual RoBERTa weight filename
-        if os.path.exists(os.path.join(base_path, "rob_sev_weights.pt")):
-            rob_sev.load_state_dict(torch.load(os.path.join(base_path, "rob_sev_weights.pt"), map_location=device))
-        
-        rob_cau = RobertaForSequenceClassification.from_pretrained("roberta-base", num_labels=6).to(device)
-        # CHANGE 'rob_cau_weights.pt' to your actual RoBERTa weight filename
-        if os.path.exists(os.path.join(base_path, "rob_cau_weights.pt")):
-            rob_cau.load_state_dict(torch.load(os.path.join(base_path, "rob_cau_weights.pt"), map_location=device))
-        
+
+        rob_sev = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device)
+
         rob_sev.eval()
+
+        rob_cau = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device)
+
         rob_cau.eval()
-        
+
         tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
-        
+
         return r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, None
+
     except Exception as e:
+
         return None, None, None, None, None, None, None, str(e)
+
+
+
+r_sev, r_cau, rob_sev, rob_cau, tokenizer, v_sev, v_cau, error_msg = load_resources()
 
 # ============================================================
 # --- 6. LANDING PAGE ---
