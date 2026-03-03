@@ -550,102 +550,97 @@ else:
     st.markdown("</div>", unsafe_allow_html=True)
 
     if run:
-            if user_input.strip():
-                # Improved sentence splitting to handle double spaces and empty strings
-                raw_sentences = [s.strip() for s in re.split(r'[.!?]', user_input) if len(s.strip()) > 2][:15]
-                inputs = tokenizer([user_input], return_tensors="pt", truncation=True, padding=True).to(device)
-    
+        if user_input.strip():
+            raw_sentences = [s.strip() for s in re.split(r'[.!?]', user_input) if s.strip()][:15]
+            inputs = tokenizer([user_input], return_tensors="pt", truncation=True, padding=True).to(device)
+
+            with torch.no_grad():
+                sev_out = rob_sev(**inputs)
+                sev_probs = F.softmax(sev_out.logits, dim=1)[0]
+                # These names now match the logic below exactly
+                p_non_severe, p_severe = sev_probs.tolist()
+
+            if analysis_type == "Severity":
                 with torch.no_grad():
-                    sev_out = rob_sev(**inputs)
-                    sev_probs = F.softmax(sev_out.logits, dim=1)[0]
-                    p_non_severe, p_severe = sev_probs.tolist()
-    
-                if analysis_type == "Severity":
-                    with torch.no_grad():
-                        tensor = torch.zeros(15, 20, dtype=torch.long).to(device)
-                        for i, sent in enumerate(raw_sentences):
-                            words = sent.lower().split()[:20]
-                            for j, word in enumerate(words):
-                                tensor[i, j] = v_sev.get(word, v_sev.get("<UNK>", 1))
-                        _, weights_re = r_sev(tensor.unsqueeze(0))
-                        importance = weights_re.squeeze().cpu().tolist()
-                        if isinstance(importance, float): importance = [importance]
-    
-                    # FIX: Lowered threshold and added a scaling factor so ReHAN supports RoBERTa
-                    # rather than just penalizing it.
-                    max_att = max(importance) if importance else 0
-                    rehan_signal = min((max_att * 2.5), 1.0) 
-                    
-                    # FIX: Weighted RoBERTa higher (0.7) to maintain baseline accuracy
-                    raw_hybrid = (p_severe * 0.7) + (rehan_signal * 0.3)
-    
-                    # FIX: Loosened "Healthy Range" constraints. Removed word count trap.
-                    if p_non_severe > 0.90: 
-                        final_label = "Healthy Range"
-                    elif p_severe > 0.80: 
-                        final_label = "Severe"
-                    else:
-                        if raw_hybrid < 0.20: final_label = "Minimum"
-                        elif raw_hybrid < 0.40: final_label = "Mild"
-                        elif raw_hybrid < 0.65: final_label = "Moderate"
-                        else: final_label = "Severe"
-    
-                    st.markdown(f"""
-                    <div class="glass-card" style="margin-top:22px;">
-                        <span class="eyebrow">Severity Assessment</span>
-                        <div class="result-label">{final_label}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    cols = st.columns(3)
-                    cols[0].metric("RoBERTa Score", f"{p_severe:.2f}")
-                    cols[1].metric("ReHAN Signal", f"{rehan_signal:.2f}")
-                    cols[2].metric("Composite Index", f"{raw_hybrid:.2f}")
-    
+                    tensor = torch.zeros(15, 20, dtype=torch.long).to(device)
+                    for i, sent in enumerate(raw_sentences):
+                        words = sent.lower().split()[:20]
+                        for j, word in enumerate(words):
+                            tensor[i, j] = v_sev.get(word, v_sev.get("<UNK>", 1))
+                    _, weights_re = r_sev(tensor.unsqueeze(0))
+                    importance = weights_re.squeeze().cpu().tolist()
+                    if isinstance(importance, float): importance = [importance]
+
+                # ORIGINAL LOGIC: 60/40 split
+                rehan_signal = min(sum(w for w in importance if w > 0.15), 1.0)
+                raw_hybrid = (p_severe * 0.6) + (rehan_signal * 0.4)
+
+                # ORIGINAL SAFE KEEPS (Healthy Range check)
+                if p_non_severe > 0.85 and len(user_input.split()) < 12: 
+                    final_label = "Healthy Range"
+                elif p_severe > 0.75: 
+                    final_label = "Severe"
                 else:
-                    with torch.no_grad():
-                        cau_out = rob_cau(**inputs)
-                        cau_probs = F.softmax(cau_out.logits, dim=1)[0]
-                        tensor_cau = torch.zeros(15, 20, dtype=torch.long).to(device)
-                        for i, sent in enumerate(raw_sentences):
-                            words = sent.lower().split()[:20]
-                            for j, word in enumerate(words):
-                                tensor_cau[i, j] = v_cau.get(word, v_cau.get("<UNK>", 1))
-                        _, weights_cau = r_cau(tensor_cau.unsqueeze(0))
-                        importance = weights_cau.squeeze().cpu().tolist()
-    
-                    causes = ["No Reason", "Bias", "Job / Career", "Medication", "Relationship", "Alienation"]
-                    rob_max, rob_idx = torch.max(cau_probs, dim=0)
-                    
-                    # FIX: Causality often has distributed attention; max weight is a better signal
-                    max_cau_att = max(importance) if isinstance(importance, list) else importance
-                    rehan_cau_sig = min((max_cau_att * 3.0), 1.0)
-                    
-                    hybrid_cau = (rob_max.item() * 0.6) + (rehan_cau_sig * 0.4)
-                    # FIX: Lowered result threshold to 0.35 to catch more nuances
-                    result_cause = causes[rob_idx.item()] if hybrid_cau >= 0.35 else "Inconclusive"
-    
+                    if raw_hybrid < 0.25: final_label = "Minimum"
+                    elif raw_hybrid < 0.45: final_label = "Mild"
+                    elif raw_hybrid < 0.70: final_label = "Moderate"
+                    else: final_label = "Severe"
+
+                st.markdown(f"""
+                <div class="glass-card" style="margin-top:22px;">
+                    <span class="eyebrow">Severity Assessment</span>
+                    <div class="result-label">{final_label}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                cols = st.columns(3)
+                cols[0].metric("RoBERTa Score", f"{p_severe:.2f}")
+                cols[1].metric("ReHAN Signal", f"{rehan_signal:.2f}")
+                cols[2].metric("Composite Index", f"{raw_hybrid:.2f}")
+
+            else:
+                with torch.no_grad():
+                    cau_out = rob_cau(**inputs)
+                    cau_probs = F.softmax(cau_out.logits, dim=1)[0]
+                    tensor_cau = torch.zeros(15, 20, dtype=torch.long).to(device)
+                    for i, sent in enumerate(raw_sentences):
+                        words = sent.lower().split()[:20]
+                        for j, word in enumerate(words):
+                            tensor_cau[i, j] = v_cau.get(word, v_cau.get("<UNK>", 1))
+                    _, weights_cau = r_cau(tensor_cau.unsqueeze(0))
+                    importance = weights_cau.squeeze().cpu().tolist()
+
+                causes = ["No Reason", "Bias", "Job / Career", "Medication", "Relationship", "Alienation"]
+                rob_max, rob_idx = torch.max(cau_probs, dim=0)
+                
+                # Handling importance if it returns a single float instead of list
+                imp_list_cau = importance if isinstance(importance, list) else [importance]
+                rehan_cau_sig = min(sum(w for w in imp_list_cau if w > 0.18), 1.0)
+                
+                # ORIGINAL LOGIC: 50/50 split for causality
+                hybrid_cau = (rob_max.item() * 0.5) + (rehan_cau_sig * 0.5)
+                result_cause = causes[rob_idx.item()] if hybrid_cau >= 0.40 else "Inconclusive"
+
+                st.markdown(f"""
+                <div class="glass-card" style="margin-top:22px;">
+                    <span class="eyebrow">Primary Thematic Determinant</span>
+                    <div class="result-label">{result_cause}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.progress(hybrid_cau)
+
+            st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+            st.markdown("<span class='eyebrow'>Linguistic Evidence · High-Signal Passages</span>", unsafe_allow_html=True)
+
+            imp_list = importance if isinstance(importance, list) else [importance]
+            found = False
+            for score, sent in zip(imp_list, raw_sentences):
+                if score > 0.15:
+                    found = True
                     st.markdown(f"""
-                    <div class="glass-card" style="margin-top:22px;">
-                        <span class="eyebrow">Primary Thematic Determinant</span>
-                        <div class="result-label">{result_cause}</div>
+                    <div class="evidence-item">
+                        <div class="evidence-text">{sent}</div>
+                        <div class="evidence-score">Signal Intensity · {score:.2f}</div>
                     </div>
                     """, unsafe_allow_html=True)
-                    st.progress(hybrid_cau)
-    
-                st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-                st.markdown("<span class='eyebrow'>Linguistic Evidence · High-Signal Passages</span>", unsafe_allow_html=True)
-    
-                imp_list = importance if isinstance(importance, list) else [importance]
-                found = False
-                # FIX: Lowered display threshold to 0.10 so users can actually see what the model is looking at
-                for score, sent in zip(imp_list, raw_sentences):
-                    if score > 0.10:
-                        found = True
-                        st.markdown(f"""
-                        <div class="evidence-item">
-                            <div class="evidence-text">{sent}</div>
-                            <div class="evidence-score">Signal Intensity · {score:.2f}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                if not found:
-                    st.markdown("<p style='color:#4a4068 !important; font-size:0.9rem !important;'>No passages exceeded signal threshold.</p>", unsafe_allow_html=True)    
+            if not found:
+                st.markdown("<p style='color:#4a4068 !important; font-size:0.9rem !important;'>No passages exceeded signal threshold.</p>", unsafe_allow_html=True)
