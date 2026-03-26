@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insyte — Privacy-First Document Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --plum:        #2D1B4E;
+    --plum-mid:    #3D2460;
+    --plum-light:  #4A3070;
+    --ash:         #8B7FA8;
+    --ash-light:   #B8AECE;
+    --cream:       #F7F5F2;
+    --cream-dark:  #EDE9E3;
+    --text:        #1A1228;
+    --text-soft:   #4A3D5C;
+    --white:       #FFFFFF;
+    --gold:        #C9A96E;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--plum);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    transform: translate(-50%, -50%);
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid var(--ash);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.15s ease;
+    transform: translate(-50%, -50%);
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 28px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    mix-blend-mode: normal;
+  }
+
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .nav-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.18em;
+    color: var(--ash-light);
+    text-transform: uppercase;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    background: var(--plum);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 60px 80px;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 20%, rgba(74,48,112,0.6) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 10% 80%, rgba(201,169,110,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 80% at 50% 100%, rgba(20,10,35,0.8) 0%, transparent 70%);
+  }
+
+  .hero-grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px;
+  }
+
+  .hero-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 42%;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent 0%, rgba(139,127,168,0.2) 30%, rgba(139,127,168,0.2) 70%, transparent 100%);
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  .hero-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 7vw, 96px);
+    font-weight: 300;
+    line-height: 1.0;
+    color: var(--white);
+    max-width: 720px;
+    opacity: 0;
+    animation: fadeUp 0.9s ease 0.5s forwards;
+  }
+
+  .hero-headline em {
+    font-style: italic;
+    color: var(--ash-light);
+  }
+
+  .hero-sub {
+    margin-top: 36px;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--ash-light);
+    max-width: 440px;
+    opacity: 0;
+    animation: fadeUp 0.9s ease 0.7s forwards;
+  }
+
+  .hero-meta {
+    position: absolute;
+    right: 60px;
+    bottom: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: right;
+    opacity: 0;
+    animation: fadeUp 0.9s ease 0.9s forwards;
+  }
+
+  .hero-meta span {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    color: rgba(139,127,168,0.5);
+    text-transform: uppercase;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.9s ease 1.2s forwards;
+  }
+
+  .scroll-hint span {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(139,127,168,0.4);
+    text-transform: uppercase;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(139,127,168,0.4), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  /* ── PROBLEM SECTION ── */
+  .section-problem {
+    background: var(--cream);
+    padding: 140px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    color: var(--ash);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-label::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .problem-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--text);
+  }
+
+  .problem-headline strong {
+    font-weight: 600;
+    color: var(--plum);
+  }
+
+  .problem-body {
+    padding-top: 60px;
+  }
+
+  .problem-body p {
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.85;
+    color: var(--text-soft);
+    margin-bottom: 24px;
+  }
+
+  .problem-body p strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .stat-row {
+    margin-top: 56px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: var(--cream-dark);
+  }
+
+  .stat-box {
+    background: var(--cream);
+    padding: 32px 28px;
+  }
+
+  .stat-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--plum);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-soft);
+    line-height: 1.5;
+  }
+
+  /* ── SOLUTION SECTION ── */
+  .section-solution {
+    background: var(--plum);
+    padding: 140px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-solution::before {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(74,48,112,0.5) 0%, transparent 70%);
+  }
+
+  .solution-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 100px;
+    align-items: start;
+  }
+
+  .solution-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--white);
+    margin-bottom: 32px;
+  }
+
+  .solution-headline em {
+    font-style: italic;
+    color: var(--ash-light);
+  }
+
+  .solution-desc {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.9;
+    color: var(--ash-light);
+  }
+
+  .capability-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .capability-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(139,127,168,0.15);
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 20px;
+    align-items: start;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+
+  .capability-item:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(139,127,168,0.3);
+  }
+
+  .cap-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    padding-top: 3px;
+  }
+
+  .cap-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .cap-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ash);
+    line-height: 1.7;
+  }
+
+  /* ── PRIVACY SECTION ── */
+  .section-privacy {
+    background: var(--cream);
+    padding: 140px 60px;
+  }
+
+  .privacy-header {
+    max-width: 600px;
+    margin-bottom: 80px;
+  }
+
+  .privacy-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .privacy-sub {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.85;
+    color: var(--text-soft);
+  }
+
+  .privacy-pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--cream-dark);
+  }
+
+  .pillar {
+    background: var(--cream);
+    padding: 48px 36px;
+    position: relative;
+  }
+
+  .pillar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 36px; right: 36px;
+    height: 2px;
+    background: var(--plum);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .pillar:hover::before {
+    transform: scaleX(1);
+  }
+
+  .pillar-icon {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .pillar-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  .pillar-body {
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: var(--text-soft);
+  }
+
+  /* ── WHO WE SERVE ── */
+  .section-who {
+    background: var(--plum);
+    padding: 140px 60px;
+  }
+
+  .who-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-bottom: 80px;
+    align-items: end;
+  }
+
+  .who-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--white);
+  }
+
+  .who-desc {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.9;
+    color: var(--ash-light);
+  }
+
+  .who-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: rgba(139,127,168,0.1);
+  }
+
+  .who-card {
+    background: rgba(255,255,255,0.03);
+    padding: 40px 32px;
+    border-bottom: 1px solid rgba(139,127,168,0.1);
+    transition: background 0.3s ease;
+  }
+
+  .who-card:hover {
+    background: rgba(255,255,255,0.06);
+  }
+
+  .who-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+
+  .who-card-body {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ash);
+    line-height: 1.75;
+  }
+
+  /* ── TRACTION ── */
+  .section-traction {
+    background: var(--cream);
+    padding: 140px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: start;
+  }
+
+  .traction-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--text);
+  }
+
+  .traction-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .traction-item {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--cream-dark);
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .traction-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin-top: 7px;
+  }
+
+  .traction-text {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--text-soft);
+  }
+
+  .traction-text strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* ── FOUNDER ── */
+  .section-founder {
+    background: var(--plum);
+    padding: 140px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .founder-inner {
+    max-width: 700px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .founder-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(24px, 3vw, 38px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--white);
+    margin-bottom: 48px;
+  }
+
+  .founder-quote::before {
+    content: '\201C';
+    font-size: 80px;
+    color: var(--gold);
+    opacity: 0.4;
+    line-height: 0;
+    vertical-align: -0.4em;
+    margin-right: 4px;
+  }
+
+  .founder-credit {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .founder-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ash-light);
+  }
+
+  .founder-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.18em;
+    color: var(--ash);
+    text-transform: uppercase;
+  }
+
+  .founder-bg-text {
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 220px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.02);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ── CONTACT ── */
+  .section-contact {
+    background: var(--cream);
+    padding: 120px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .contact-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.25em;
+    color: var(--ash);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .contact-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 36px;
+    max-width: 600px;
+  }
+
+  .contact-body {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.85;
+    color: var(--text-soft);
+    max-width: 440px;
+    margin-bottom: 48px;
+  }
+
+  .contact-email {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--plum);
+    text-decoration: none;
+    border-bottom: 1px solid var(--plum);
+    padding-bottom: 4px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .contact-email:hover {
+    color: var(--plum-light);
+    border-color: var(--plum-light);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--plum);
+    padding: 40px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .footer-right span {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    color: rgba(139,127,168,0.5);
+    text-transform: uppercase;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50%       { opacity: 0.8; transform: scaleY(1.2); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    nav { padding: 24px 32px; }
+    .hero { padding: 0 32px 80px; }
+    .section-problem,
+    .section-solution .solution-grid,
+    .section-traction,
+    .who-header { grid-template-columns: 1fr; gap: 48px; }
+    .section-problem,
+    .section-solution,
+    .section-privacy,
+    .section-who,
+    .section-traction,
+    .section-founder,
+    .section-contact { padding: 80px 32px; }
+    .privacy-pillars,
+    .who-grid { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .hero-meta { display: none; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    .footer-right { align-items: center; }
+    body { cursor: auto; }
+    .cursor, .cursor-ring { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Insyte</div>
+  <div class="nav-tag">Edmonton, Alberta &nbsp;·&nbsp; Early Stage</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grain"></div>
+  <div class="hero-line"></div>
+
+  <div class="hero-eyebrow">Document Intelligence &nbsp;·&nbsp; Privacy First</div>
+
+  <h1 class="hero-headline">
+    Making documents<br><em>intelligent,</em><br>not just digital.
+  </h1>
+
+  <p class="hero-sub">
+    Insyte is a privacy-first NLP platform built for organizations serving vulnerable populations in Alberta. All data stays on Canadian soil.
+  </p>
+
+  <div class="hero-meta">
+    <span>Edmonton Metropolitan Region</span>
+    <span>HIA &amp; PIPA Compliant</span>
+    <span>TRL 3–4</span>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="section-problem">
+  <div class="problem-left reveal">
+    <div class="section-label">The Problem</div>
+    <h2 class="problem-headline">
+      Digital healthcare created a new kind of <strong>filing cabinet.</strong>
+    </h2>
+  </div>
+  <div class="problem-body reveal reveal-delay-1">
+    <p>
+      The shift to digital workflows did not eliminate paperwork. It digitized it. Nonprofits, mental health clinics, and community organizations now manage hundreds of intake forms, assessments, and case files across fragmented digital systems — with <strong>no intelligent way to synthesize or act on them.</strong>
+    </p>
+    <p>
+      Mainstream AI tools that could help are off limits. Strict provincial regulations — Alberta's Health Information Act and PIPA — make existing solutions legally inaccessible to organizations handling sensitive client data.
+    </p>
+    <p>
+      The result: frontline workers spend the majority of their time on administrative tasks instead of serving the people who need them.
+    </p>
+
+    <div class="stat-row reveal reveal-delay-2">
+      <div class="stat-box">
+        <div class="stat-number">80%</div>
+        <div class="stat-label">of Canadian nonprofits use AI — but half use it in three or fewer activities, and almost none for sensitive data workflows</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">10%</div>
+        <div class="stat-label">of Canadian nonprofits have a formal AI policy — leaving 64% using AI with no governance framework at all</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">0</div>
+        <div class="stat-label">Canadian competitors offering HIA-compliant document intelligence</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">AB</div>
+        <div class="stat-label">First and only province-specific AI intake platform for sensitive populations</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="section-solution">
+  <div class="solution-grid">
+    <div class="reveal">
+      <div class="section-label" style="color: var(--ash);">The Solution</div>
+      <h2 class="solution-headline">
+        One platform.<br><em>Four layers</em><br>of intelligence.
+      </h2>
+      <p class="solution-desc">
+        Insyte ingests documents from multiple sources and transforms them into structured, actionable intelligence. No paraphrasing. No interpretation. Every output is traceable back to its source document — essential in clinical environments where accuracy is non-negotiable.
+      </p>
+    </div>
+    <div class="capability-list reveal reveal-delay-1">
+      <div class="capability-item">
+        <div class="cap-number">01</div>
+        <div>
+          <div class="cap-title">Document Synthesis</div>
+          <div class="cap-desc">Multiple intake forms, assessments, and records synthesized into a single one-page summary. Extractive, not generative — the language always belongs to the source.</div>
+        </div>
+      </div>
+      <div class="capability-item">
+        <div class="cap-number">02</div>
+        <div>
+          <div class="cap-title">Semantic Search</div>
+          <div class="cap-desc">Find what matters across all documents simultaneously. Searches by meaning, not just exact keywords — surfacing relevant content even when terminology differs.</div>
+        </div>
+      </div>
+      <div class="capability-item">
+        <div class="cap-number">03</div>
+        <div>
+          <div class="cap-title">Pattern Detection</div>
+          <div class="cap-desc">Identifies recurring themes, contradictions, and linguistic patterns across an entire document set — connecting findings no single reviewer could reliably surface alone.</div>
+        </div>
+      </div>
+      <div class="capability-item">
+        <div class="cap-number">04</div>
+        <div>
+          <div class="cap-title">Risk Flagging</div>
+          <div class="cap-desc">Passively monitors all documents for language associated with crisis, acute risk, or urgent need. Runs automatically on every upload, regardless of what else the user searches for.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="section-privacy">
+  <div class="privacy-header reveal">
+    <div class="section-label">Privacy Architecture</div>
+    <h2 class="privacy-headline">
+      Security is not a feature.<br>It is the foundation.
+    </h2>
+    <p class="privacy-sub">
+      Every architectural decision in Insyte flows from one principle: the organizations we serve cannot afford a trust failure. We built the compliance infrastructure before writing a single line of product code.
+    </p>
+  </div>
+
+  <div class="privacy-pillars">
+    <div class="pillar reveal reveal-delay-1">
+      <div class="pillar-icon">Regulation</div>
+      <div class="pillar-title">HIA &amp; PIPA Compliant</div>
+      <div class="pillar-body">Built specifically for Alberta's Health Information Act and Personal Information Protection Act. Not adapted from an American framework — designed for Canadian law from day one.</div>
+    </div>
+    <div class="pillar reveal reveal-delay-2">
+      <div class="pillar-icon">Residency</div>
+      <div class="pillar-title">Canadian Soil Only</div>
+      <div class="pillar-body">All data is stored and processed on Canadian servers. No cross-border transfers. Data sovereignty is a technical guarantee, not a policy statement.</div>
+    </div>
+    <div class="pillar reveal reveal-delay-3">
+      <div class="pillar-icon">Lifecycle</div>
+      <div class="pillar-title">Encryption &amp; Deletion</div>
+      <div class="pillar-body">Envelope encryption with a Canadian Key Management Service. Automated secure deletion with cryptographic erasure. Tamper-proof audit logs retained as required by law.</div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO WE SERVE -->
+<section class="section-who">
+  <div class="who-header">
+    <div class="reveal">
+      <div class="section-label" style="color: var(--ash);">Who We Serve</div>
+      <h2 class="who-headline">
+        Built for the organizations mainstream AI left behind.
+      </h2>
+    </div>
+    <p class="who-desc reveal reveal-delay-1">
+      Insyte is purpose-built for Alberta organizations working with sensitive populations — the exact organizations that have the most to gain from document intelligence and the most to lose from choosing the wrong tool.
+    </p>
+  </div>
+
+  <div class="who-grid">
+    <div class="who-card reveal">
+      <div class="who-card-title">Mental Health Clinics</div>
+      <div class="who-card-body">Psychologists and community mental health providers managing client intake, session notes, assessments, and referral documents across complex caseloads.</div>
+    </div>
+    <div class="who-card reveal reveal-delay-1">
+      <div class="who-card-title">Nonprofits &amp; Social Services</div>
+      <div class="who-card-body">Organizations serving homeless populations, newcomers, Indigenous communities, and individuals in crisis — where documentation is heavy and staff capacity is thin.</div>
+    </div>
+    <div class="who-card reveal reveal-delay-2">
+      <div class="who-card-title">Community Organizations</div>
+      <div class="who-card-body">Community leagues, social prescribing networks, and public health programs managing intake across multiple sites and programs with limited administrative resources.</div>
+    </div>
+  </div>
+</section>
+
+<!-- TRACTION -->
+<section class="section-traction">
+  <div class="reveal">
+    <div class="section-label">Where We Are</div>
+    <h2 class="traction-headline">
+      Early stage.<br>Deep conviction.
+    </h2>
+  </div>
+
+  <ul class="traction-list reveal reveal-delay-1">
+    <li class="traction-item">
+      <div class="traction-dot"></div>
+      <div class="traction-text"><strong>Active discovery conversations</strong> with psychologists, nonprofit leaders, and community organizations across Edmonton consistently validate the compliance gap and administrative burden.</div>
+    </li>
+    <li class="traction-item">
+      <div class="traction-dot"></div>
+      <div class="traction-text"><strong>Introductory meeting scheduled</strong> with the Alberta Psychological Association. Pilot conversations underway with Bissell Centre and Edmonton community league networks.</div>
+    </li>
+    <li class="traction-item">
+      <div class="traction-dot"></div>
+      <div class="traction-text"><strong>Lab2Market validation applicant</strong> through the University of Alberta. Applied to Edmonton50 investor showcase program.</div>
+    </li>
+    <li class="traction-item">
+      <div class="traction-dot"></div>
+      <div class="traction-text"><strong>MVP pipeline in active development.</strong> Typed PDF ingestion and extractive summarization engine in build. Closed pilot target: August 2025.</div>
+    </li>
+    <li class="traction-item">
+      <div class="traction-dot"></div>
+      <div class="traction-text"><strong>No equivalent Canadian product exists.</strong> Competitive research across Canada and the US confirmed zero HIA-compliant document intelligence tools serving this market.</div>
+    </li>
+  </ul>
+</section>
+
+<!-- FOUNDER -->
+<section class="section-founder">
+  <div class="founder-bg-text">I</div>
+  <div class="founder-inner reveal">
+    <div class="section-label" style="color: var(--ash);">The Founder</div>
+    <blockquote class="founder-quote">
+      I have lived both sides of this problem. As an immigrant navigating systems that were overwhelmed, and as a nonprofit worker watching frontline staff buried in paperwork while people waited. I am building Insyte because I believe bringing the right tools to these organizations can create lasting change for the people they exist to serve.
+    </blockquote>
+    <div class="founder-credit">
+      <div class="founder-name">Mohamed Osman</div>
+      <div class="founder-title">Founder &nbsp;·&nbsp; Psychology Researcher, University of Alberta &nbsp;·&nbsp; Edmonton</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section-contact">
+  <div class="contact-eyebrow reveal">Get In Touch</div>
+  <h2 class="contact-headline reveal reveal-delay-1">
+    Interested in what we are building?
+  </h2>
+  <p class="contact-body reveal reveal-delay-2">
+    We are in active customer discovery and always open to conversations with organizations, researchers, advisors, and investors who care about this problem.
+  </p>
+  <a href="/cdn-cgi/l/email-protection#bed6dbd2d2d1fed7d0cdc7cadb90dddf" class="contact-email reveal reveal-delay-3"><span class="__cf_email__" data-cfemail="2b434e4747446b424558525f4e05484a">[email&#160;protected]</span></a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Insyte</div>
+  <div class="footer-right">
+    <span>Edmonton, Alberta &nbsp;·&nbsp; Canada</span>
+    <span>Privacy. Intelligence. Trust.</span>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  // ── CUSTOM CURSOR ──
+  const cursor = document.getElementById('cursor');
+  const ring   = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top  = my + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button, .capability-item, .pillar, .who-card').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(2.5)';
+      ring.style.transform   = 'translate(-50%,-50%) scale(1.5)';
+      ring.style.borderColor = 'var(--gold)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+      ring.style.transform   = 'translate(-50%,-50%) scale(1)';
+      ring.style.borderColor = 'var(--ash)';
+    });
+  });
+
+  // ── SCROLL REVEAL ──
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
