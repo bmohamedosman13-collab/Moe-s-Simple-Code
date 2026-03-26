@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Insyte — Document Intelligence for Canadian Organizations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #06030f;
+    --purple-mid: #7c3aed;
+    --purple-pale: #c4b5f4;
+    --surface: rgba(12, 6, 28, 0.65);
+    --border: rgba(130, 90, 240, 0.16);
+    --border-hover: rgba(160, 120, 255, 0.32);
+    --text-primary: #f0eaff;
+    --text-secondary: #cdc5e2;
+    --text-muted: #8880a8;
+    --text-dim: #4e4470;
+    --sidebar-w: 210px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text-secondary); font-family: 'DM Sans', sans-serif; line-height: 1.7; overflow-x: hidden; }
+
+  /* AURORA */
+  .aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.52; }
+  .orb-1 { width: 900px; height: 650px; background: radial-gradient(ellipse, #2e17a0 0%, transparent 70%); top: -200px; left: -250px; animation: drift1 22s ease-in-out infinite alternate; }
+  .orb-2 { width: 720px; height: 560px; background: radial-gradient(ellipse, #5e14b8 0%, transparent 70%); bottom: -150px; right: -180px; animation: drift2 25s ease-in-out infinite alternate; }
+  .orb-3 { width: 580px; height: 480px; background: radial-gradient(ellipse, #130847 0%, transparent 70%); top: 35%; left: 40%; animation: drift3 18s ease-in-out infinite alternate; }
+  .orb-4 { width: 460px; height: 400px; background: radial-gradient(ellipse, #3d0d90 0%, transparent 70%); top: 60%; left: 8%; animation: drift4 28s ease-in-out infinite alternate; }
+  @keyframes drift1 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(80px,100px) scale(1.12); } 100% { transform: translate(130px,50px) scale(1.06); } }
+  @keyframes drift2 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(-100px,-80px) scale(1.1); } 100% { transform: translate(-70px,-140px) scale(1.08); } }
+  @keyframes drift3 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(60px,-80px) scale(1.18); } 100% { transform: translate(-40px,55px) scale(0.9); } }
+  @keyframes drift4 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(90px,-110px) scale(1.14); } }
+
+  /* SIDEBAR */
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w); z-index: 50; display: flex; flex-direction: column; justify-content: center; padding: 0 0 0 38px; }
+  .sidebar-brand { font-family: 'DM Serif Display', serif; font-size: 1.55rem; background: linear-gradient(110deg,#f0ebff 0%,#c4b5f4 40%,#8b5cf6 70%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; display: block; margin-bottom: 44px; }
+  .nav-items { display: flex; flex-direction: column; gap: 4px; }
+  .nav-link { display: flex; align-items: center; gap: 10px; font-size: 0.76rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-dim); text-decoration: none; padding: 7px 0; transition: color 0.2s; }
+  .nav-link::before { content: ''; display: inline-block; width: 14px; height: 1px; background: var(--text-dim); transition: width 0.25s, background 0.25s; flex-shrink: 0; }
+  .nav-link:hover, .nav-link.active { color: var(--purple-pale); }
+  .nav-link:hover::before, .nav-link.active::before { width: 26px; background: var(--purple-mid); }
+  .sidebar-footer { position: absolute; bottom: 36px; left: 38px; font-size: 0.67rem; color: var(--text-dim); letter-spacing: 0.06em; line-height: 1.8; }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); position: relative; z-index: 1; }
+  .wrap { max-width: 760px; padding: 0 52px 0 44px; }
+
+  /* SHARED */
+  section { padding: 112px 0; }
+  .section-label { font-size: 0.67rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+  .section-label::before { content: ''; display: inline-block; width: 20px; height: 1px; background: var(--purple-mid); flex-shrink: 0; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.9rem,3.4vw,2.75rem); font-weight: 400; color: var(--text-primary); line-height: 1.1; letter-spacing: -0.022em; margin-bottom: 22px; }
+  .section-body { font-size: 1.01rem; color: var(--text-muted); max-width: 560px; line-height: 1.84; }
+  .divider { height: 1px; background: linear-gradient(to right, transparent, rgba(140,100,255,0.18), transparent); border: none; margin: 0 44px; }
+
+  /* ── HERO ── */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 100px 0 80px; }
+  .hero-eyebrow { font-size: 0.69rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 26px; display: flex; align-items: center; gap: 12px; opacity: 0; animation: fadeUp 0.8s 0.1s forwards; }
+  .hero-eyebrow::before { content: ''; display: inline-block; width: 26px; height: 1px; background: var(--purple-mid); }
+
+  .hero-hook { font-family: 'DM Serif Display', serif; font-size: clamp(2.8rem,5.2vw,4.8rem); font-weight: 400; line-height: 1.04; letter-spacing: -0.03em; color: var(--text-primary); opacity: 0; animation: fadeUp 0.8s 0.22s forwards; }
+  .hero-hook em { font-style: italic; background: linear-gradient(110deg,#c4b5f4 0%,#8b5cf6 50%,#a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  .hero-pitch { margin-top: 36px; opacity: 0; animation: fadeUp 0.8s 0.38s forwards; }
+  .hero-pitch p { font-size: 1.04rem; color: var(--text-muted); line-height: 1.84; max-width: 560px; margin-bottom: 16px; }
+  .hero-pitch p:last-child { margin-bottom: 0; }
+  .hero-pitch strong { color: var(--text-secondary); font-weight: 500; }
+  .hero-pitch .closer {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    font-style: italic;
+    color: var(--purple-pale);
+    margin-top: 28px;
+    display: block;
+  }
+
+  .hero-cta { margin-top: 44px; opacity: 0; animation: fadeUp 0.8s 0.52s forwards; }
+  .btn-contact { display: inline-flex; align-items: center; gap: 10px; padding: 14px 30px; background: linear-gradient(135deg,#4e1d9e,#7c3aed); color: #ede8ff; font-size: 0.84rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 24px rgba(90,30,180,0.40); transition: all 0.2s; }
+  .btn-contact:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(90,30,180,0.58); }
+
+  /* ── PROBLEM ── */
+  .bottleneck-visual { display: flex; align-items: stretch; gap: 0; margin: 48px 0; max-width: 580px; }
+  .bn-step { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px 20px; text-align: center; position: relative; transition: border-color 0.2s; }
+  .bn-step:hover { border-color: var(--border-hover); }
+  .bn-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--text-dim); flex-shrink: 0; }
+  .bn-step-label { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .bn-step-name { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--text-secondary); }
+  .bn-step.blocked { border-color: rgba(124,58,237,0.35); background: rgba(78,29,158,0.12); }
+  .bn-step.blocked .bn-step-name { color: var(--purple-pale); }
+  .bn-step.blocked .bn-step-label { color: rgba(196,181,244,0.5); }
+  .bn-block-tag { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple-pale); background: rgba(124,58,237,0.18); border: 1px solid rgba(140,100,255,0.22); border-radius: 4px; padding: 2px 7px; margin-top: 8px; display: inline-block; }
+
+  .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+  .problem-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 28px; transition: border-color 0.2s, transform 0.2s; }
+  .problem-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+  .problem-num { font-family: 'DM Serif Display', serif; font-size: 2.2rem; color: var(--purple-mid); opacity: 0.28; line-height: 1; margin-bottom: 12px; }
+  .problem-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.06rem; font-weight: 400; color: var(--text-primary); margin-bottom: 9px; }
+  .problem-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.72; }
+
+  /* ── SOLUTION ── */
+  .solution-intro { font-size: 1.01rem; color: var(--text-muted); line-height: 1.84; max-width: 560px; margin-bottom: 44px; }
+
+  .how-it-works { display: flex; flex-direction: column; gap: 0; margin-bottom: 52px; max-width: 560px; }
+  .hiw-step { display: flex; gap: 24px; align-items: flex-start; padding: 22px 0; border-bottom: 1px solid rgba(130,90,240,0.09); }
+  .hiw-step:last-child { border-bottom: none; }
+  .hiw-icon { width: 40px; height: 40px; flex-shrink: 0; margin-top: 2px; }
+  .hiw-content h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin-bottom: 5px; }
+  .hiw-content p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.68; }
+
+  .compliance-wrap { display: flex; flex-direction: column; gap: 10px; max-width: 520px; margin-top: 8px; }
+  .compliance-badge { display: flex; align-items: center; gap: 14px; padding: 15px 18px; background: rgba(100,60,200,0.07); border: 1px solid rgba(140,100,255,0.12); border-radius: 10px; }
+  .compliance-icon-wrap { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg,rgba(78,29,158,0.55),rgba(124,58,237,0.35)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .compliance-text h5 { font-size: 0.86rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+  .compliance-text p { font-size: 0.77rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── WHY ── */
+  .diff-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 48px; }
+  .diff-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 22px; transition: border-color 0.2s, transform 0.2s; }
+  .diff-card:hover { border-color: var(--border-hover); transform: translateY(-4px); }
+  .diff-card-icon { margin-bottom: 18px; }
+  .diff-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.04rem; font-weight: 400; color: var(--text-primary); margin-bottom: 9px; }
+  .diff-card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+
+  /* ── STAGE ── */
+  .stage-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 42px; margin-top: 48px; }
+  .stage-intro { font-size: 0.99rem; color: var(--text-muted); line-height: 1.82; margin-bottom: 34px; max-width: 520px; }
+  .stage-steps { display: flex; flex-direction: column; }
+  .stage-step { display: flex; gap: 20px; align-items: flex-start; padding: 17px 0; border-bottom: 1px solid rgba(130,90,240,0.08); }
+  .stage-step:last-child { border-bottom: none; }
+  .step-num { font-family: 'DM Serif Display', serif; font-size: 0.98rem; color: var(--purple-mid); opacity: 0.42; min-width: 22px; margin-top: 2px; }
+  .step-content h4 { font-size: 0.91rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; }
+  .step-content p { font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; }
+  .step-active .step-num { color: var(--purple-pale); opacity: 1; }
+  .step-active h4 { color: var(--purple-pale); }
+  .step-badge { font-size: 0.59rem; letter-spacing: 0.12em; text-transform: uppercase; background: rgba(124,58,237,0.2); color: var(--purple-pale); border: 1px solid rgba(140,100,255,0.24); border-radius: 4px; padding: 2px 7px; margin-left: 8px; vertical-align: middle; }
+
+  /* ── CONTACT ── */
+  .contact-wrap { padding: 112px 0 130px; }
+  .contact-email { display: inline-flex; align-items: center; gap: 12px; margin-top: 40px; padding: 17px 32px; background: rgba(78,29,158,0.13); border: 1px solid var(--border); border-radius: 12px; color: var(--purple-pale); font-size: 0.97rem; font-weight: 500; text-decoration: none; letter-spacing: 0.02em; transition: all 0.2s; }
+  .contact-email:hover { background: rgba(78,29,158,0.26); border-color: var(--border-hover); transform: translateY(-2px); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+  .reveal { opacity:0; transform:translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  /* RESPONSIVE */
+  @media (max-width: 860px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .wrap { padding: 0 26px; }
+    .problem-grid, .diff-grid { grid-template-columns: 1fr; }
+    .divider { margin: 0 26px; }
+    .bottleneck-visual { flex-direction: column; }
+    .bn-arrow { transform: rotate(90deg); justify-content: center; padding: 4px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a href="#hero" class="sidebar-brand">Insyte</a>
+  <nav class="nav-items">
+    <a href="#hero"     class="nav-link active" data-section="hero">Overview</a>
+    <a href="#problem"  class="nav-link" data-section="problem">The Problem</a>
+    <a href="#solution" class="nav-link" data-section="solution">Solution</a>
+    <a href="#why"      class="nav-link" data-section="why">Why Insyte</a>
+    <a href="#stage"    class="nav-link" data-section="stage">Our Stage</a>
+    <a href="#contact"  class="nav-link" data-section="contact">Contact</a>
+  </nav>
+  <div class="sidebar-footer">
+    Edmonton, Alberta<br/>
+    Early Stage
+  </div>
+</aside>
+
+<div class="main">
+
+  <!-- ══ HERO ══ -->
+  <section id="hero">
+    <div class="wrap">
+      <div class="hero-eyebrow">Privacy-Compliant AI &nbsp;·&nbsp; Built for Canada</div>
+      <h1 class="hero-hook">
+        The bottleneck<br/>
+        <em>didn't disappear.</em><br/>
+        It moved online.
+      </h1>
+      <div class="hero-pitch">
+        <p>The shift to digital healthcare solved one problem and created another. Paper forms became digital forms. Filing cabinets became cloud folders. <strong>The bottleneck did not disappear — it just moved online.</strong></p>
+        <p>For psychologists, nonprofits, and community organizations serving vulnerable populations, this bottleneck is acute. They manage hundreds of intake documents across multiple sources with no way to synthesize, analyze, or surface patterns. Mainstream AI tools that could help are off limits — sending sensitive client data to US-hosted platforms violates Alberta's Health Information Act and the trust of the populations they serve.</p>
+        <p>Insyte is a privacy-first document intelligence platform built for Canadian regulatory compliance. Clinicians upload intake forms, medical records, and assessments. Insyte returns a one-page synthesis, flags risk indicators, and detects patterns across documents. All data stays on Canadian soil.</p>
+        <span class="closer">We are not digitizing paperwork. We are making it intelligent.</span>
+      </div>
+      <div class="hero-cta">
+        <a href="#contact" class="btn-contact">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 8l10 7 10-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Get in Touch
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══ PROBLEM ══ -->
+  <section id="problem">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label">The Problem</div>
+        <h2 class="section-title">Digital storage was step one. Comprehension is step two — and no one has built it for Canada.</h2>
+        <p class="section-body">Organizations serving vulnerable populations made the switch from paper to digital. But the work of reading, organizing, and understanding documents remained entirely manual. And the AI tools that could change that are legally inaccessible to them.</p>
+      </div>
+
+      <!-- Bottleneck visual -->
+      <div class="bottleneck-visual reveal">
+        <div class="bn-step">
+          <div class="bn-step-label">Era 1</div>
+          <div class="bn-step-name">Paper Files</div>
+        </div>
+        <div class="bn-arrow">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 6l4 4-4 4" stroke="var(--text-dim)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="bn-step">
+          <div class="bn-step-label">Era 2</div>
+          <div class="bn-step-name">Cloud Folders</div>
+        </div>
+        <div class="bn-arrow">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 6l4 4-4 4" stroke="var(--text-dim)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="bn-step blocked">
+          <div class="bn-step-label">Era 3</div>
+          <div class="bn-step-name">AI Comprehension</div>
+          <div class="bn-block-tag">Compliance Gap</div>
+        </div>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card reveal">
+          <div class="problem-num">01</div>
+          <h3>A compliance gap no one has closed</h3>
+          <p>Most AI tools in this space are HIPAA-compliant — a US standard. Organizations in Alberta operating under PIPA, PIPEDA, and the Health Information Act have no equivalent option that meets their legal obligations.</p>
+        </div>
+        <div class="problem-card reveal">
+          <div class="problem-num">02</div>
+          <h3>Documentation consumes the entire day</h3>
+          <p>A typical nonprofit hires one or two intake staff whose entire shifts are spent on documentation and file processing. That time cannot be spent on the people who need help.</p>
+        </div>
+        <div class="problem-card reveal">
+          <div class="problem-num">03</div>
+          <h3>Existing systems only store, never understand</h3>
+          <p>Current EHR tools file records but don't read them. Clinicians still do the organizing, pattern-finding, and summarizing manually — every single time.</p>
+        </div>
+        <div class="problem-card reveal">
+          <div class="problem-num">04</div>
+          <h3>People are falling through the cracks</h3>
+          <p>When staff capacity is consumed by paperwork, timely support becomes impossible. For individuals relying on these services, delays are not inconveniences — they are crises.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══ SOLUTION ══ -->
+  <section id="solution">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label">The Solution</div>
+        <h2 class="section-title">Document intelligence. Built for Canadian law, designed for clinical reality.</h2>
+      </div>
+
+      <p class="solution-intro reveal">Insyte automates intake documentation and file comprehension — built from the ground up to meet Canadian and Albertan privacy requirements. Clinicians upload documents from multiple sources. Insyte reads, synthesizes, and surfaces what matters. No workarounds. No legal risk.</p>
+
+      <div class="how-it-works reveal">
+
+        <div class="hiw-step">
+          <svg class="hiw-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="rgba(78,29,158,0.2)"/>
+            <path d="M12 14h16M12 20h10M12 26h13" stroke="#a78bfa" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M26 22l2 2 4-4" stroke="#c4b5f4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="hiw-content">
+            <h4>Multi-source document ingestion</h4>
+            <p>Upload intake forms, assessments, and medical records from multiple sources and formats. Insyte processes and organizes them without manual sorting.</p>
+          </div>
+        </div>
+
+        <div class="hiw-step">
+          <svg class="hiw-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="rgba(78,29,158,0.2)"/>
+            <rect x="11" y="11" width="18" height="18" rx="3" stroke="#a78bfa" stroke-width="1.5"/>
+            <path d="M15 16h10M15 20h7M15 24h8" stroke="#c4b5f4" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <div class="hiw-content">
+            <h4>Synthesized one-page summaries</h4>
+            <p>Every client file becomes a concise, structured summary — giving clinicians the full picture in seconds rather than hours.</p>
+          </div>
+        </div>
+
+        <div class="hiw-step">
+          <svg class="hiw-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="rgba(78,29,158,0.2)"/>
+            <circle cx="18" cy="18" r="6" stroke="#a78bfa" stroke-width="1.5"/>
+            <path d="M23 23l5 5" stroke="#c4b5f4" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M15 18h6M18 15v6" stroke="#a78bfa" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <div class="hiw-content">
+            <h4>Keyword search and pattern detection</h4>
+            <p>Search across all documents instantly and surface patterns across files that would otherwise go unnoticed in a heavy caseload.</p>
+          </div>
+        </div>
+
+        <div class="hiw-step">
+          <svg class="hiw-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="rgba(78,29,158,0.2)"/>
+            <path d="M12 28 L16 20 L20 24 L24 16 L28 20" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="28" cy="14" r="3" stroke="#c4b5f4" stroke-width="1.4"/>
+          </svg>
+          <div class="hiw-content">
+            <h4>Sentiment analysis and risk flagging</h4>
+            <p>Detect shifts in tone and flag potential risk indicators early — so no signal gets buried in administrative noise.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="reveal">
+        <div class="section-label">Privacy Compliance</div>
+        <div class="compliance-wrap">
+          <div class="compliance-badge">
+            <div class="compliance-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7v5c0 5 3.6 9.7 8 11 4.4-1.3 8-6 8-11V7L12 3z" stroke="#c4b5f4" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="compliance-text"><h5>PIPEDA Compliant</h5><p>Federal privacy law for private sector organizations across Canada</p></div>
+          </div>
+          <div class="compliance-badge">
+            <div class="compliance-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7v5c0 5 3.6 9.7 8 11 4.4-1.3 8-6 8-11V7L12 3z" stroke="#c4b5f4" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="#a78bfa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="compliance-text"><h5>Alberta PIPA Compliant</h5><p>Personal Information Protection Act — Alberta's provincial standard</p></div>
+          </div>
+          <div class="compliance-badge">
+            <div class="compliance-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" stroke="#c4b5f4" stroke-width="1.5"/><path d="M8 11V7a4 4 0 018 0v4" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1.5" fill="#c4b5f4"/></svg>
+            </div>
+            <div class="compliance-text"><h5>Canadian Data Sovereignty</h5><p>All data processed and stored on Canadian soil — never routed through US infrastructure</p></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══ WHY ══ -->
+  <section id="why">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label">Why Insyte</div>
+        <h2 class="section-title">A level of trust no competitor can match.</h2>
+        <p class="section-body">Every other tool in this space was built for a different market and adapted — or simply ruled out — for Canadian organizations. Insyte was built here, for here.</p>
+      </div>
+      <div class="diff-grid">
+        <div class="diff-card reveal">
+          <div class="diff-card-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="rgba(78,29,158,0.18)"/><path d="M10 16l4 4 8-8" stroke="#c4b5f4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Legally usable in Alberta</h3>
+          <p>Every competing tool fails the compliance test for organizations operating under PIPA. Insyte is built to pass it — not as an afterthought, but by design.</p>
+        </div>
+        <div class="diff-card reveal">
+          <div class="diff-card-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="rgba(78,29,158,0.18)"/><circle cx="16" cy="14" r="5" stroke="#a78bfa" stroke-width="1.5"/><path d="M8 26c0-4 3.6-7 8-7s8 3 8 7" stroke="#c4b5f4" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Intelligence, not just storage</h3>
+          <p>Existing systems file records. Insyte reads them, synthesizes them, and surfaces what matters — without a human doing that work every time.</p>
+        </div>
+        <div class="diff-card reveal">
+          <div class="diff-card-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="rgba(78,29,158,0.18)"/><path d="M10 22v-3a6 6 0 0112 0v3" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="12" r="3" stroke="#c4b5f4" stroke-width="1.5"/><path d="M6 22h20" stroke="#a78bfa" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Built for underserved organizations</h3>
+          <p>Not an enterprise product adapted for nonprofits. Built for them from day one, with workflows and pricing that reflect their reality.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══ STAGE ══ -->
+  <section id="stage">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label">Where We Are</div>
+        <h2 class="section-title">Early stage. Deep conviction.</h2>
+      </div>
+      <div class="stage-wrap reveal">
+        <p class="stage-intro">We have had direct conversations with psychologists, nonprofit leaders, and community organizations in Edmonton. Those conversations consistently confirm the problem is real, the compliance gap is felt, and the need is urgent. We are building the right solution — carefully and deliberately.</p>
+        <div class="stage-steps">
+          <div class="stage-step step-active">
+            <div class="step-num">01</div>
+            <div class="step-content">
+              <h4>Customer Discovery <span class="step-badge">Now</span></h4>
+              <p>Talking directly with clinicians and nonprofit leaders in Edmonton to validate the problem and shape the product.</p>
+            </div>
+          </div>
+          <div class="stage-step">
+            <div class="step-num">02</div>
+            <div class="step-content">
+              <h4>Pilot Development</h4>
+              <p>Building the core document ingestion and summarization engine with privacy infrastructure embedded from the start.</p>
+            </div>
+          </div>
+          <div class="stage-step">
+            <div class="step-num">03</div>
+            <div class="step-content">
+              <h4>Pilot Deployment</h4>
+              <p>Closed pilot with partner organizations in Alberta to validate the tool in real clinical environments.</p>
+            </div>
+          </div>
+          <div class="stage-step">
+            <div class="step-num">04</div>
+            <div class="step-content">
+              <h4>Scale</h4>
+              <p>Expanding to nonprofits, mental health clinics, and community organizations across Canada.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══ CONTACT ══ -->
+  <section id="contact">
+    <div class="wrap contact-wrap">
+      <div class="reveal">
+        <div class="section-label">Get in Touch</div>
+        <h2 class="section-title">Interested in what we are building?</h2>
+        <p class="section-body">Whether you are a potential pilot partner, an investor, or someone who works with vulnerable populations and sees this problem every day — we want to hear from you.</p>
+        <a href="mailto:insyteinfoedmonton@gmail.com" class="contact-email">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 8l10 7 10-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          insyteinfoedmonton@gmail.com
+        </a>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /main -->
+
+<script>
+  const reveals = document.querySelectorAll('.reveal');
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 70);
+        revealObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.07 });
+  reveals.forEach(el => revealObs.observe(el));
+
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link[data-section]');
+  const sectionObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const match = document.querySelector(`.nav-link[data-section="${entry.target.id}"]`);
+        if (match) match.classList.add('active');
+      }
+    });
+  }, { threshold: 0.35 });
+  sections.forEach(s => sectionObs.observe(s));
+</script>
+</body>
+</html>
