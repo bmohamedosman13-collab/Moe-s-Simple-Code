@@ -1,6 +1,6 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
-import re
 
 # ── PAGE CONFIG ──
 st.set_page_config(
@@ -29,16 +29,12 @@ try:
     with open(HTML_PATH, "r", encoding="utf-8") as f:
         html_content = f.read()
 
-    # Pull <head> (styles + font links) and <body> content separately
-    # then inject both inline — this avoids the iframe sandbox that
-    # blocks Google Fonts and custom CSS in components.html()
-    head_match = re.search(r'<head[^>]*>(.*?)</head>', html_content, re.DOTALL)
-    body_match = re.search(r'<body[^>]*>(.*?)</body>', html_content, re.DOTALL)
-
-    head_content = head_match.group(1) if head_match else ""
-    body_content = body_match.group(1) if body_match else html_content
-
-    st.markdown(f"<head>{head_content}</head>{body_content}", unsafe_allow_html=True)
+    # Render the full HTML document inside an iframe.
+    # This is the correct way to render a complete HTML page in Streamlit —
+    # st.markdown() only injects fragments into Streamlit's own DOM and
+    # cannot apply <style> blocks or <link> tags, which causes raw CSS to
+    # appear as text (the bug you were seeing).
+    components.html(html_content, height=6000, scrolling=True)
 
 except FileNotFoundError:
     st.error(
